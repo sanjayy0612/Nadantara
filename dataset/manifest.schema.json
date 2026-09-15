@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seamtranslation.local/schemas/dataset-manifest.json",
+  "title": "SeamTranslation dataset manifest row",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "dataset_id",
+    "source_url",
+    "source_license",
+    "audio_path",
+    "audio_origin",
+    "translation_origin",
+    "source_language",
+    "target_language",
+    "duration_seconds",
+    "split",
+    "content_sha256"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "source_url": {"type": "string", "format": "uri"},
+    "source_license": {"type": "string", "minLength": 1},
+    "source_subset": {"type": ["string", "null"]},
+    "audio_path": {"type": "string", "minLength": 1},
+    "source_text": {"type": ["string", "null"]},
+    "target_text": {"type": ["string", "null"]},
+    "target_audio_path": {"type": ["string", "null"]},
+    "audio_origin": {"enum": ["real", "enhanced-real", "synthetic"]},
+    "translation_origin": {"enum": ["human", "mined", "synthetic", "unknown"]},
+    "source_language": {"const": "en"},
+    "target_language": {"const": "hi"},
+    "alignment_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "speaker_id": {"type": ["string", "null"]},
+    "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "split": {"enum": ["train", "validation", "test"]},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

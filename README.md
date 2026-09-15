@@ -45,3 +45,14 @@ seamtranslation passthrough input.wav output.wav
 - [Evaluation contract](docs/evaluation.md)
 - [Short build overview](docs/build-plan.md)
 - [Contributor and agent instructions](AGENTS.md)
+
+## Repository layout
+
+```text
+dataset/          dataset schemas, manifests and provenance guidance
+docs/             architecture, product and evaluation decisions
+model_registry/   model identity and lineage metadata (not weights)
+src/              reusable runtime and model code
+tests/            deterministic unit and smoke tests
+train/            experiment configurations and training entry points
+```

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seamtranslation.local/schemas/model-registry.json",
+  "title": "SeamTranslation model registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "models"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "role", "architecture", "license", "precision", "sha256"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "role": {"enum": ["teacher", "student", "unit-tokenizer", "vocoder"]},
+          "architecture": {"type": "string", "minLength": 1},
+          "source_url": {"type": ["string", "null"], "format": "uri"},
+          "license": {"type": "string", "minLength": 1},
+          "precision": {"enum": ["fp32", "fp16", "int8", "mixed"]},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "training_manifest_sha256": {"type": ["string", "null"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
