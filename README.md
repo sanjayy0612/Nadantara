@@ -16,8 +16,8 @@ in and audio out.
 
 The repository contains the executable system skeleton: validated audio configuration,
 deterministic PCM chunking, contracts for every model boundary, an identity audio
-backend, and automatic MPS/CUDA/CPU selection. The identity backend deliberately does
-no translation; it validates transport without pretending that the model exists.
+backend, automatic MPS/CUDA/CPU selection, and the trainable compact UnitY-style PyTorch
+graph. The model currently has random weights and therefore does not translate yet.
 
 ## Quick start
 
