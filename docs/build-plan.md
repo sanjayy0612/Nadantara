@@ -1,6 +1,8 @@
 # Build plan
 
 This is one product developed through verified vertical slices, not separate products.
+The authoritative work breakdown and exit criteria are in
+[implementation-plan.md](implementation-plan.md). This file is the short overview.
 
 ## 0 — executable foundation (complete)
 
