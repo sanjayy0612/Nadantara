@@ -112,9 +112,9 @@ S2ST can substantially improve speed, but it accepts a quality trade-off.
 
 ### Whole-model budget
 
-- Target parameters: 75–130M.
-- FP16 weight target: 150–260 MB.
-- INT8 weight target: 75–130 MB, excluding metadata/scales.
+- Target parameters: 60–130M.
+- FP16 weight target: 120–260 MB.
+- INT8 weight target: 60–130 MB, excluding metadata/scales.
 - Peak runtime-memory target: at most 2 GB for model inference.
 - Batch size: 1.
 - Maximum initial utterance: 15 seconds.

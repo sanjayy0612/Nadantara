@@ -90,9 +90,9 @@ evaluation; model size alone is not sufficient evidence.
 
 | Property | Initial constraint |
 |---|---:|
-| Parameters | 75–130M |
-| FP16 weights | 150–260 MB |
-| INT8 weights | 75–130 MB plus scales/metadata |
+| Parameters | 60–130M |
+| FP16 weights | 120–260 MB |
+| INT8 weights | 60–130 MB plus scales/metadata |
 | Peak inference memory | ≤2 GB target |
 | Deployment batch | 1 |
 | Initial utterance | ≤15 seconds |
@@ -103,3 +103,8 @@ Establish correctness in FP32/FP16. Then test INT8 per component. Linear and con
 weights are likely candidates; normalization, softmax, output projections and the
 vocoder remain FP16 when quantization harms stability or speech quality. Sparse speedup
 is never assumed without device measurement.
+
+The initial default PyTorch configuration contains 65,247,994 parameters. This implies
+approximately 124.5 MiB of raw FP16 weights or 62.2 MiB of raw INT8 weights. It does not
+include activations, runtime workspaces, allocator overhead, caches, or quantization
+metadata and therefore is not a runtime-memory benchmark.
