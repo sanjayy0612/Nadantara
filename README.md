@@ -43,6 +43,7 @@ seamtranslation passthrough input.wav output.wav
 - [Architecture evidence](docs/architecture-study.md)
 - [Implementation plan](docs/implementation-plan.md)
 - [Evaluation contract](docs/evaluation.md)
+- [Dataset audit](docs/dataset-audit.md)
 - [Short build overview](docs/build-plan.md)
 - [Contributor and agent instructions](AGENTS.md)
 

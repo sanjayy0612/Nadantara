@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "direction": {"source": "en", "target": "hi"},
+  "sources": [
+    {
+      "id": "bhasaanuvaad-seamlessalign",
+      "role": "speech-translation-train",
+      "status": "accepted-after-filtering",
+      "url": "https://github.com/AI4Bharat/BhasaAnuvaad",
+      "license": "CC-BY-4.0",
+      "origin": "mixed-curated-mined-synthetic"
+    },
+    {
+      "id": "indic-tedst-en-hi",
+      "role": "speech-translation-train-eval",
+      "status": "conditional-on-access-terms",
+      "url": "https://aclanthology.org/2024.lrec-main.790/",
+      "license": "task-access-terms",
+      "origin": "real-source-speech-translated-text"
+    },
+    {
+      "id": "samanantar-en-hi",
+      "role": "parallel-text-train",
+      "status": "accepted-after-source-filtering",
+      "url": "https://arxiv.org/abs/2104.05596",
+      "license": "CC0-packaging-underlying-rights-vary",
+      "origin": "mixed-existing-mined"
+    },
+    {
+      "id": "indicvoices-r-hi",
+      "role": "hindi-unit-vocoder-train",
+      "status": "accepted-after-filtering",
+      "url": "https://github.com/AI4Bharat/IndicVoices-R",
+      "license": "CC-BY-4.0",
+      "origin": "enhanced-real"
+    },
+    {
+      "id": "kathbath-hi",
+      "role": "hindi-unit-vocoder-supplement",
+      "status": "accepted-with-source-text-caveat",
+      "url": "https://github.com/AI4Bharat/indicSUPERB",
+      "license": "CC0-packaging-source-text-rights-vary",
+      "origin": "real-read-speech"
+    },
+    {
+      "id": "flores-200-en-hi",
+      "role": "text-evaluation-only",
+      "status": "accepted-evaluation-only",
+      "url": "https://huggingface.co/datasets/facebook/flores",
+      "license": "CC-BY-SA-4.0",
+      "origin": "human-translated"
+    },
+    {
+      "id": "fleurs-en-hi",
+      "role": "speech-evaluation-only",
+      "status": "accepted-evaluation-only",
+      "url": "https://huggingface.co/datasets/google/fleurs",
+      "license": "CC-BY-4.0",
+      "origin": "real-read-speech"
+    },
+    {
+      "id": "covost2",
+      "role": "none",
+      "status": "rejected-no-en-hi-direction",
+      "url": "https://github.com/facebookresearch/covost",
+      "license": "mixed",
+      "origin": "real-source-speech-translated-text"
+    }
+  ]
+}
