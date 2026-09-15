@@ -10,7 +10,9 @@ from seamtranslation.config import AudioConfig
 def make_wav(path: Path, frames: int, sample_rate: int = 16_000) -> bytes:
     payload = b"\x01\x00" * frames
     with wave.open(str(path), "wb") as stream:
-        stream.setnchannels(1); stream.setsampwidth(2); stream.setframerate(sample_rate)
+        stream.setnchannels(1)
+        stream.setsampwidth(2)
+        stream.setframerate(sample_rate)
         stream.writeframes(payload)
     return payload
 
