@@ -35,4 +35,6 @@ Validate the audio path with a mono, 16-bit, 16 kHz PCM WAV:
 seamtranslation passthrough input.wav output.wav
 ```
 
-See [architecture](docs/architecture.md) and [build plan](docs/build-plan.md).
+See the [architecture decision](docs/architecture.md), its
+[evidence-backed study](docs/architecture-study.md), and the
+[build plan](docs/build-plan.md).

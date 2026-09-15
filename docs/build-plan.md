@@ -31,7 +31,6 @@ generation without boundary artifacts. Report latency including all buffering.
 
 ## Next task
 
-Before downloading checkpoints, select a legally usable evaluation corpus, bidirectional
-teacher, compatible unit tokenizer/vocoder, compact English speech encoder with a Hindi
-speech-generation path, and
-numeric budgets based on this Mac's actual unified memory.
+Before downloading checkpoints, select a legally usable evaluation corpus, one-way
+English→Hindi teacher, compatible unit tokenizer/vocoder, and pretrained components that
+fit the budgets accepted in [architecture-study.md](architecture-study.md).
