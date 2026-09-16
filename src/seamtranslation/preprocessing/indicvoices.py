@@ -22,6 +22,7 @@ class PreparationSummary:
     dataset_id: str
     dataset_revision: str
     source_shards: tuple[str, ...]
+    source_shard_sha256: dict[str, str]
     examples: int
     speakers: int
     duration_seconds: float
@@ -71,6 +72,8 @@ def prepare_indicvoices(
     speakers: set[str] = set()
     duration_seconds = 0.0
     source_shards: set[str] = set()
+    shard_paths = sorted(source.glob("*.parquet"))
+    source_shard_sha256 = {path.name: _sha256_file(path) for path in shard_paths}
 
     with manifest_path.open("w", encoding="utf-8") as manifest:
         for index, example in enumerate(iter_indicvoices(source)):
@@ -128,6 +131,7 @@ def prepare_indicvoices(
         dataset_id=DATASET_ID,
         dataset_revision=dataset_revision,
         source_shards=tuple(sorted(source_shards)),
+        source_shard_sha256=source_shard_sha256,
         examples=sum(split_examples.values()),
         speakers=len(speakers),
         duration_seconds=duration_seconds,
@@ -140,3 +144,11 @@ def prepare_indicvoices(
         encoding="utf-8",
     )
     return summary
+
+
+def _sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    digest = sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(chunk_size):
+            digest.update(chunk)
+    return digest.hexdigest()

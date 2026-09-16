@@ -67,6 +67,9 @@ def test_prepare_indicvoices_writes_resampled_manifest(tmp_path: Path) -> None:
     rows = [json.loads(line) for line in (output / "manifest.jsonl").read_text().splitlines()]
     assert summary.examples == 2
     assert summary.sample_rate == 16_000
+    assert summary.source_shard_sha256["train-00000.parquet"] == sha256(
+        (source / "train-00000.parquet").read_bytes()
+    ).hexdigest()
     assert {row["speaker_id"] for row in rows} == {"speaker-1", "speaker-2"}
     assert all(row["sample_rate"] == 16_000 for row in rows)
     for row in rows:
