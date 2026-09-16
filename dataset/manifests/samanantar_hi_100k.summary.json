@@ -1,0 +1,24 @@
+{
+  "accepted": 100000,
+  "artifact_bytes_approx": 97882112,
+  "dataset_id": "ai4bharat/samanantar",
+  "dataset_revision": "ead34c5b22a0354d350e7dfdd6aece7df5a48f37",
+  "license": "CC0-1.0 packaging; underlying-source rights vary",
+  "manifest_sha256": "17b875ce5e4e3b88a85c87d48c641cb6e928b62dff38dcbed65d70033490c936",
+  "preprocessing_commit": "b81600812a856388e9a908ecf8ec96432fd4ea8d",
+  "rejected": {
+    "duplicate": 2281,
+    "length": 391,
+    "length_ratio": 343,
+    "target_script": 1303
+  },
+  "scanned": 104318,
+  "source_shard_sha256": {
+    "train-00000-of-00008.parquet": "f396924b5c0e17568bde7369d5bc12a92aed21c0cdc0480e75b68bd73886c0a4"
+  },
+  "split_examples": {
+    "train": 99042,
+    "validation": 958
+  },
+  "validation_fraction": 0.01
+}
