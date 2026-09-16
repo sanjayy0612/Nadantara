@@ -19,6 +19,8 @@ class IndicVoicesExample:
     duration_seconds: float
     sample_count: int
     language: str
+    source_shard: str
+    source_row: int
 
 
 _COLUMNS = (
@@ -66,6 +68,7 @@ def iter_indicvoices(
             names = ", ".join(sorted(missing))
             raise ValueError(f"{shard_path} is missing required columns: {names}")
 
+        source_row = 0
         for batch in parquet_file.iter_batches(batch_size=batch_size, columns=_COLUMNS):
             for row in batch.to_pylist():
                 language = row["lang"]
@@ -85,7 +88,10 @@ def iter_indicvoices(
                     duration_seconds=float(row["duration"]),
                     sample_count=int(row["samples"]),
                     language=language,
+                    source_shard=shard_path.name,
+                    source_row=source_row,
                 )
+                source_row += 1
 
 
 def _resolve_shards(paths: Path | str | Sequence[Path | str]) -> list[Path]:

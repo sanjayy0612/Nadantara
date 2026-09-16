@@ -35,6 +35,8 @@ def test_iter_indicvoices_reads_embedded_audio(tmp_path: Path) -> None:
     assert examples[0].audio_bytes == b"RIFF-test"
     assert examples[0].audio_filename == "sample.wav"
     assert examples[0].duration_seconds == 1.25
+    assert examples[0].source_shard == "train-00000.parquet"
+    assert examples[0].source_row == 0
 
 
 def test_iter_indicvoices_rejects_wrong_language(tmp_path: Path) -> None:

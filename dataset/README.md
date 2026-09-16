@@ -40,3 +40,16 @@ PY
 
 The source audio is embedded in each Parquet row as 48 kHz WAV bytes. Resampling to the
 model's 16 kHz boundary contract belongs in preprocessing, not in this source reader.
+
+Prepare all locally downloaded shards with a deterministic speaker-disjoint split:
+
+```bash
+PYTHONPATH=src python train/prepare_indicvoices.py \
+  --source dataset/raw/indicvoices_r/Hindi \
+  --output dataset/processed/indicvoices_r_hi_dev \
+  --dataset-revision 5f4495c91d500742a58d1be2ab07d77f73c0acf8
+```
+
+The ignored output contains 16 kHz PCM WAV files, `manifest.jsonl`, and a provenance and
+split summary in `summary.json`. Refusing to overwrite an existing output prevents two
+different preprocessing runs from being silently mixed.
