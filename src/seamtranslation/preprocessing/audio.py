@@ -27,21 +27,25 @@ class AudioSamples:
 
 
 def decode_wav(payload: bytes) -> AudioSamples:
-    """Decode mono signed 16-bit PCM WAV bytes."""
+    """Decode signed 16-bit PCM WAV bytes and downmix channels to mono."""
 
     try:
         with wave.open(BytesIO(payload), "rb") as stream:
-            observed = (stream.getnchannels(), stream.getsampwidth(), stream.getcomptype())
-            expected = (1, 2, "NONE")
-            if observed != expected:
-                raise ValueError(f"WAV format mismatch: expected {expected}, got {observed}")
+            channels = stream.getnchannels()
+            observed = (stream.getsampwidth(), stream.getcomptype())
+            expected = (2, "NONE")
+            if channels <= 0 or observed != expected:
+                raise ValueError(
+                    "WAV format mismatch: expected signed 16-bit PCM with at least one "
+                    f"channel, got channels={channels}, format={observed}"
+                )
             sample_rate = stream.getframerate()
             frames = stream.readframes(stream.getnframes())
     except (EOFError, wave.Error) as exc:
         raise ValueError("invalid WAV payload") from exc
 
-    pcm = np.frombuffer(frames, dtype="<i2")
-    waveform = (pcm.astype(np.float32) / 32_768.0).copy()
+    pcm = np.frombuffer(frames, dtype="<i2").reshape(-1, channels)
+    waveform = pcm.astype(np.float32).mean(axis=1) / 32_768.0
     return AudioSamples(waveform=waveform, sample_rate=sample_rate)
 
 

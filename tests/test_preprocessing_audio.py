@@ -34,10 +34,12 @@ def test_decode_resample_encode_to_model_contract() -> None:
     assert np.max(np.abs(result.waveform)) == pytest.approx(16_000 / 32_768, abs=0.002)
 
 
-def test_decode_rejects_stereo() -> None:
-    stereo = np.zeros(20, dtype="<i2")
-    with pytest.raises(ValueError, match="WAV format mismatch"):
-        decode_wav(_wav_bytes(48_000, stereo, channels=2))
+def test_decode_downmixes_stereo() -> None:
+    stereo = np.array([10_000, 0, 0, 10_000], dtype="<i2")
+    decoded = decode_wav(_wav_bytes(48_000, stereo, channels=2))
+
+    assert len(decoded.waveform) == 2
+    assert decoded.waveform.tolist() == pytest.approx([5_000 / 32_768, 5_000 / 32_768])
 
 
 def test_audio_samples_rejects_wrong_shape() -> None:
