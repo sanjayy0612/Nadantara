@@ -1,0 +1,29 @@
+{
+  "artifact_bytes_approx": 335138816,
+  "audio_files": 1064,
+  "dataset_id": "ai4bharat/indicvoices_r",
+  "dataset_revision": "5f4495c91d500742a58d1be2ab07d77f73c0acf8",
+  "duration_seconds": 10345.762625000003,
+  "examples": 1064,
+  "license": "CC-BY-4.0",
+  "manifest_sha256": "b2d4e378ee3360c0f02bacbc4d948839961611613063e86c2ad76e6c9af2de1e",
+  "preprocessing_commit": "0ba2901f6c89a50f3abebe7f4dbe42e7f700b688",
+  "sample_rate": 16000,
+  "source_shard_sha256": {
+    "train-00000-of-00099.parquet": "19010a2bc72b815ae82de6c9ed69ce0c7af23f2d53cfbb453ffeed405ad2520e",
+    "train-00001-of-00099.parquet": "be023a3e4943489ead31958d56526944e0052d1e7f63845db5593ad8dc332999",
+    "train-00002-of-00099.parquet": "46d9d085d50876601b0c400e54e60823f8acc3eb4f7f5c1060984ae456c1be4a",
+    "train-00003-of-00099.parquet": "7c17a6c9b9bc704ec3aedd286013743f75e5de211b15eca220ccd09524d0831f"
+  },
+  "speakers": 144,
+  "split_examples": {
+    "train": 994,
+    "validation": 70
+  },
+  "split_seed": "seamtranslation-v1",
+  "split_speakers": {
+    "train": 132,
+    "validation": 12
+  },
+  "validation_fraction": 0.1
+}
