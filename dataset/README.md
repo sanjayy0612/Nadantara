@@ -53,3 +53,22 @@ PYTHONPATH=src python train/prepare_indicvoices.py \
 The ignored output contains 16 kHz PCM WAV files, `manifest.jsonl`, and a provenance and
 split summary in `summary.json`. Refusing to overwrite an existing output prevents two
 different preprocessing runs from being silently mixed.
+
+## Samanantar semantic pretraining subset
+
+Samanantar supplies English-Hindi text pairs for semantic-decoder pretraining; it does
+not replace English speech-to-Hindi supervision. Prepare a bounded, filtered starter
+slice from a downloaded Hindi shard:
+
+```bash
+PYTHONPATH=src python train/prepare_samanantar.py \
+  --source dataset/raw/samanantar/hi \
+  --output dataset/processed/samanantar_hi_100k \
+  --dataset-revision ead34c5b22a0354d350e7dfdd6aece7df5a48f37 \
+  --limit 100000
+```
+
+The filter normalizes Unicode and whitespace, checks English/Devanagari script coverage,
+rejects extreme lengths and ratios, removes repeated sources or targets, and creates a
+deterministic 1% monitoring split. Samanantar packaging is CC0, but underlying-source
+rights vary; retain the provenance warning in downstream model records.

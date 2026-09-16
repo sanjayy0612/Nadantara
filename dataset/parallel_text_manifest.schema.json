@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seamtranslation.local/schemas/parallel-text-manifest.json",
+  "title": "SeamTranslation English-Hindi parallel-text manifest row",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "dataset_id", "dataset_revision", "source_url", "source_license",
+    "source_language", "target_language", "source_text", "target_text",
+    "translation_origin", "split", "content_sha256"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "dataset_revision": {"type": "string", "minLength": 1},
+    "source_url": {"type": "string", "format": "uri"},
+    "source_license": {"type": "string", "minLength": 1},
+    "source_subset": {"const": "hi"},
+    "source_shard": {"type": "string", "minLength": 1},
+    "source_row": {"type": "integer", "minimum": 0},
+    "source_index": {"type": "integer", "minimum": 0},
+    "source_language": {"const": "en"},
+    "target_language": {"const": "hi"},
+    "source_text": {"type": "string", "minLength": 1},
+    "target_text": {"type": "string", "minLength": 1},
+    "translation_origin": {"const": "mixed-existing-and-mined"},
+    "split": {"enum": ["train", "validation"]},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}
