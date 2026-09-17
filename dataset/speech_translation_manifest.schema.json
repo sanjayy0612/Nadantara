@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seamtranslation.local/schemas/speech-translation-manifest.json",
+  "title": "English-speech-to-Hindi-text manifest row",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id", "dataset_id", "dataset_revision", "audio_path", "source_language",
+    "target_language", "source_text", "target_text", "duration_seconds",
+    "sample_rate", "alignment_score", "translation_score", "split",
+    "content_sha256", "original_audio_sha256"
+  ],
+  "properties": {
+    "source_language": {"const": "en"},
+    "target_language": {"const": "hi"},
+    "sample_rate": {"const": 16000},
+    "audio_path": {"type": "string", "pattern": "^audio/[a-f0-9]{64}\\.wav$"},
+    "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+    "alignment_score": {"type": "number", "minimum": 0, "maximum": 1},
+    "translation_score": {"type": "number", "minimum": 0, "maximum": 1},
+    "split": {"enum": ["train", "validation"]},
+    "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "original_audio_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

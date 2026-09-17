@@ -49,6 +49,21 @@ def decode_wav(payload: bytes) -> AudioSamples:
     return AudioSamples(waveform=waveform, sample_rate=sample_rate)
 
 
+def decode_compressed_audio(payload: bytes) -> AudioSamples:
+    """Decode a libsndfile-supported payload such as MP3, FLAC, or Ogg to mono."""
+
+    try:
+        import soundfile
+    except ImportError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError("compressed audio requires: python -m pip install -e '.[data]'") from exc
+    try:
+        waveform, sample_rate = soundfile.read(BytesIO(payload), dtype="float32", always_2d=True)
+    except soundfile.SoundFileError as exc:
+        raise ValueError("unsupported or invalid compressed audio payload") from exc
+    mono = waveform.mean(axis=1, dtype=np.float32)
+    return AudioSamples(waveform=mono, sample_rate=sample_rate)
+
+
 def resample(audio: AudioSamples, target_rate: int = 16_000) -> AudioSamples:
     """Band-limited polyphase resampling with deterministic output length."""
 

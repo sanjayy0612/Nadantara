@@ -4,7 +4,13 @@ import wave
 import numpy as np
 import pytest
 
-from seamtranslation.preprocessing import AudioSamples, decode_wav, encode_wav, resample
+from seamtranslation.preprocessing import (
+    AudioSamples,
+    decode_compressed_audio,
+    decode_wav,
+    encode_wav,
+    resample,
+)
 
 
 def _wav_bytes(sample_rate: int, samples: np.ndarray, *, channels: int = 1) -> bytes:
@@ -45,3 +51,14 @@ def test_decode_downmixes_stereo() -> None:
 def test_audio_samples_rejects_wrong_shape() -> None:
     with pytest.raises(ValueError, match="one-dimensional float32"):
         AudioSamples(np.zeros((1, 4), dtype=np.float32), 16_000)
+
+
+def test_decode_compressed_audio_reads_flac() -> None:
+    import soundfile
+
+    output = BytesIO()
+    soundfile.write(output, np.array([[0.25, 0.75]], dtype=np.float32), 16_000, format="FLAC")
+    decoded = decode_compressed_audio(output.getvalue())
+
+    assert decoded.sample_rate == 16_000
+    assert decoded.waveform.tolist() == pytest.approx([0.5], abs=0.001)

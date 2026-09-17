@@ -72,3 +72,21 @@ The filter normalizes Unicode and whitespace, checks English/Devanagari script c
 rejects extreme lengths and ratios, removes repeated sources or targets, and creates a
 deterministic 1% monitoring split. Samanantar packaging is CC0, but underlying-source
 rights vary; retain the provenance warning in downstream model records.
+
+## WordProject speech-translation subset
+
+WordProject provides the missing English-speech-to-Hindi-text supervision. Its files
+label embedded payloads as WAV even when they are MP3, so preparation uses libsndfile,
+then emits verified mono 16 kHz PCM WAV. Build a 2,000-example starter slice:
+
+```bash
+PYTHONPATH=src .venv/bin/python train/prepare_wordproject.py \
+  --source dataset/raw/wordproject/En-Indic \
+  --output dataset/processed/wordproject_en_hi_2k \
+  --dataset-revision 82398593980643a685816a77236adaa05591b12d \
+  --limit 2000
+```
+
+Defaults require speech alignment ≥0.9, Hindi mining score ≥0.8, duration 1–20 seconds,
+and English/Devanagari script checks. The monitoring split hashes the original recording
+ID, keeping neighboring chunks from the same source recording in one split.
