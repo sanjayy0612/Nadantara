@@ -29,3 +29,26 @@ PYTHONPATH=src:. .venv/bin/python train/train_semantic.py \
 This configuration is a short graph and checkpoint verification run, not a quality
 training run. Increase steps and model dimensions only after it finishes with finite,
 decreasing loss and a reloadable checkpoint.
+
+For the first bounded M2 experiment, use `train/configs/semantic-local-m2.json`. It
+trains a semantic-only model for 200 steps, evaluates every 25 steps, saves every 50
+steps, and keeps the best validation checkpoint:
+
+```bash
+PYTHONPATH=src:. .venv/bin/python train/train_semantic.py \
+  --config train/configs/semantic-local-m2.json \
+  --manifest dataset/processed/wordproject_en_hi_2k/manifest.jsonl \
+  --tokenizer artifacts/tokenizers/hindi_8k/hindi.model \
+  --output train/runs/semantic-local-m2
+```
+
+Resume an interrupted run into the same directory:
+
+```bash
+PYTHONPATH=src:. .venv/bin/python train/train_semantic.py \
+  --config train/configs/semantic-local-m2.json \
+  --manifest dataset/processed/wordproject_en_hi_2k/manifest.jsonl \
+  --tokenizer artifacts/tokenizers/hindi_8k/hindi.model \
+  --output train/runs/semantic-local-m2 \
+  --resume train/runs/semantic-local-m2/checkpoint.pt
+```

@@ -2,10 +2,11 @@ from pathlib import Path
 
 import torch
 
-from seamtranslation.models import ModelConfig, SeamTranslationModel
+from seamtranslation.models import ModelConfig, SpeechSemanticModel
 from seamtranslation.tokenization import HindiTokenizer
 from seamtranslation.training import SemanticExample, collate_semantic_batch, semantic_loss
 from train.train_tokenizer import train_tokenizer
+from train.train_semantic import deterministic_batch_indices
 
 
 def test_semantic_loss_backpropagates(tmp_path: Path) -> None:
@@ -40,7 +41,7 @@ def test_semantic_loss_backpropagates(tmp_path: Path) -> None:
         bos_token_id=tokenizer.special_ids.bos,
         eos_token_id=tokenizer.special_ids.eos,
     )
-    model = SeamTranslationModel(config)
+    model = SpeechSemanticModel(config)
     batch = collate_semantic_batch(
         [SemanticExample(torch.zeros(1_600), "यह एक प्रशिक्षण वाक्य है")],
         tokenizer,
@@ -52,3 +53,17 @@ def test_semantic_loss_backpropagates(tmp_path: Path) -> None:
 
     assert torch.isfinite(loss)
     assert model.semantic_decoder.output_projection.weight.grad is not None
+
+
+def test_deterministic_batches_resume_at_same_sequence() -> None:
+    uninterrupted = [
+        deterministic_batch_indices(step, dataset_size=5, batch_size=2, seed=17)
+        for step in range(6)
+    ]
+    resumed = [
+        deterministic_batch_indices(step, dataset_size=5, batch_size=2, seed=17)
+        for step in range(3, 6)
+    ]
+
+    assert uninterrupted[3:] == resumed
+    assert uninterrupted[0] != uninterrupted[3]

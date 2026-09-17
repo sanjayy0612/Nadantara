@@ -1,4 +1,4 @@
-"""Train the English-speech-to-Hindi-semantic stage."""
+"""Train, validate, checkpoint, and resume the speech-to-semantic stage."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import time
 
 import torch
 
-from seamtranslation.models import ModelConfig, SeamTranslationModel
+from seamtranslation.models import ModelConfig, SpeechSemanticModel
 from seamtranslation.runtime import detect_runtime
 from seamtranslation.tokenization import HindiTokenizer
 from seamtranslation.training import (
@@ -23,86 +23,267 @@ from seamtranslation.training import (
 )
 
 
-def train(config_path: Path, manifest_path: Path, tokenizer_path: Path, output: Path) -> dict:
-    if output.exists():
+def train(
+    config_path: Path,
+    manifest_path: Path,
+    tokenizer_path: Path,
+    output: Path,
+    *,
+    resume_path: Path | None = None,
+) -> dict:
+    if output.exists() and resume_path is None:
         raise FileExistsError(f"output already exists: {output}")
     raw_config = json.loads(config_path.read_text())
     training = raw_config["training"]
+    if training.get("precision", "fp32") != "fp32":
+        raise ValueError("only fp32 training is currently verified")
     seed = int(training["seed"])
     random.seed(seed)
     torch.manual_seed(seed)
     tokenizer = HindiTokenizer(tokenizer_path)
-    model_values = dict(raw_config["model"])
-    model_values["semantic_vocab_size"] = tokenizer.vocabulary_size
-    model_values.update(
-        pad_token_id=tokenizer.special_ids.pad,
-        bos_token_id=tokenizer.special_ids.bos,
-        eos_token_id=tokenizer.special_ids.eos,
-    )
-    model_config = ModelConfig(**model_values)
-    requested_device = training.get("device", "auto")
-    device_name = detect_runtime().device if requested_device == "auto" else requested_device
+    model_config = _model_config(raw_config, tokenizer)
+    device_name = _device_name(str(training.get("device", "auto")))
     device = torch.device(device_name)
-    dataset = WordProjectSemanticDataset(
-        manifest_path,
-        split="train",
-        max_examples=int(training["max_examples"]),
+    manifest_sha256 = _sha256_file(manifest_path)
+    tokenizer_sha256 = _sha256_file(tokenizer_path)
+    train_dataset = WordProjectSemanticDataset(
+        manifest_path, split="train", max_examples=int(training["max_examples"])
     )
-    model = SeamTranslationModel(model_config).to(device)
-    trainable_modules = (model.frontend, model.subsampler, model.encoder, model.semantic_decoder)
-    parameters = [parameter for module in trainable_modules for parameter in module.parameters()]
-    optimizer = torch.optim.AdamW(parameters, lr=float(training["learning_rate"]))
+    validation_dataset = WordProjectSemanticDataset(
+        manifest_path,
+        split="validation",
+        max_examples=int(training["max_validation_examples"]),
+    )
+    model = SpeechSemanticModel(model_config).to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=float(training["learning_rate"]))
+    start_step = 0
+    best_validation_loss = float("inf")
+    train_history: list[dict[str, float | int]] = []
+    validation_history: list[dict[str, float | int]] = []
+    if resume_path is not None:
+        checkpoint = torch.load(resume_path, map_location=device, weights_only=False)
+        _validate_resume(
+            checkpoint,
+            raw_config=raw_config,
+            manifest_sha256=manifest_sha256,
+            tokenizer_sha256=tokenizer_sha256,
+        )
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_step = int(checkpoint["step"])
+        best_validation_loss = float(checkpoint["best_validation_loss"])
+        train_history = list(checkpoint["train_history"])
+        validation_history = list(checkpoint["validation_history"])
+
+    output.mkdir(parents=True, exist_ok=resume_path is not None)
     max_steps = int(training["max_steps"])
+    if start_step >= max_steps:
+        raise ValueError(f"checkpoint step {start_step} is not below max_steps {max_steps}")
     batch_size = int(training["batch_size"])
-    losses: list[float] = []
+    evaluation_interval = int(training["evaluation_interval"])
+    checkpoint_interval = int(training["checkpoint_interval"])
+    log_interval = int(training["log_interval"])
+    _synchronize(device)
     started = time.perf_counter()
-    model.train()
-    for step in range(max_steps):
-        indices = [(step * batch_size + offset) % len(dataset) for offset in range(batch_size)]
+
+    for step_index in range(start_step, max_steps):
+        step = step_index + 1
+        model.train()
+        indices = deterministic_batch_indices(
+            step_index, dataset_size=len(train_dataset), batch_size=batch_size, seed=seed
+        )
         batch = collate_semantic_batch(
-            [dataset[index] for index in indices],
+            [train_dataset[index] for index in indices],
             tokenizer,
             max_tokens=model_config.max_semantic_tokens,
         ).to(device)
         optimizer.zero_grad(set_to_none=True)
         loss = semantic_loss(model, batch)
         if not bool(torch.isfinite(loss)):
-            raise RuntimeError(f"non-finite loss at step {step + 1}: {loss.item()}")
+            raise RuntimeError(f"non-finite loss at step {step}: {loss.item()}")
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(parameters, float(training["max_gradient_norm"]))
+        gradient_norm = torch.nn.utils.clip_grad_norm_(
+            model.parameters(), float(training["max_gradient_norm"])
+        )
         optimizer.step()
-        losses.append(float(loss.detach().cpu()))
-        print(f"step={step + 1} loss={losses[-1]:.6f}")
+        loss_value = float(loss.detach().cpu())
+        train_history.append(
+            {"step": step, "loss": loss_value, "gradient_norm": float(gradient_norm)}
+        )
+        if step == 1 or step % log_interval == 0:
+            print(f"step={step} train_loss={loss_value:.6f}")
 
-    output.mkdir(parents=True)
+        should_evaluate = step % evaluation_interval == 0 or step == max_steps
+        if should_evaluate:
+            validation_loss = evaluate(
+                model,
+                validation_dataset,
+                tokenizer,
+                device=device,
+                batch_size=batch_size,
+                max_tokens=model_config.max_semantic_tokens,
+            )
+            validation_history.append({"step": step, "loss": validation_loss})
+            print(f"step={step} validation_loss={validation_loss:.6f}")
+            if validation_loss < best_validation_loss:
+                best_validation_loss = validation_loss
+                _save_checkpoint(
+                    output / "best.pt",
+                    model=model,
+                    optimizer=optimizer,
+                    step=step,
+                    best_validation_loss=best_validation_loss,
+                    train_history=train_history,
+                    validation_history=validation_history,
+                    raw_config=raw_config,
+                    manifest_sha256=manifest_sha256,
+                    tokenizer_sha256=tokenizer_sha256,
+                )
+
+        if step % checkpoint_interval == 0 or step == max_steps:
+            for checkpoint_path in (
+                output / f"checkpoint-step-{step:06d}.pt",
+                output / "checkpoint.pt",
+            ):
+                _save_checkpoint(
+                    checkpoint_path,
+                    model=model,
+                    optimizer=optimizer,
+                    step=step,
+                    best_validation_loss=best_validation_loss,
+                    train_history=train_history,
+                    validation_history=validation_history,
+                    raw_config=raw_config,
+                    manifest_sha256=manifest_sha256,
+                    tokenizer_sha256=tokenizer_sha256,
+                )
+
+    _synchronize(device)
     elapsed = time.perf_counter() - started
     metadata = {
         "git_commit": _git_commit(),
         "config": raw_config,
         "model_config": asdict(model_config),
-        "manifest_sha256": _sha256_file(manifest_path),
-        "tokenizer_sha256": _sha256_file(tokenizer_path),
+        "manifest_sha256": manifest_sha256,
+        "tokenizer_sha256": tokenizer_sha256,
         "device": device_name,
+        "start_step": start_step,
         "steps": max_steps,
-        "examples": len(dataset),
-        "losses": losses,
+        "train_examples": len(train_dataset),
+        "validation_examples": len(validation_dataset),
+        "best_validation_loss": best_validation_loss,
+        "train_history": train_history,
+        "validation_history": validation_history,
         "elapsed_seconds": elapsed,
-        "parameters_total": model.parameter_count(),
-        "parameters_trained": sum(parameter.numel() for parameter in parameters),
+        "parameters_trained": model.parameter_count(),
     }
-    torch.save(
-        {
-            "step": max_steps,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "metadata": metadata,
-        },
-        output / "checkpoint.pt",
-    )
     (output / "metadata.json").write_text(
         json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     return metadata
+
+
+@torch.inference_mode()
+def evaluate(
+    model: SpeechSemanticModel,
+    dataset: WordProjectSemanticDataset,
+    tokenizer: HindiTokenizer,
+    *,
+    device: torch.device,
+    batch_size: int,
+    max_tokens: int,
+) -> float:
+    model.eval()
+    losses: list[float] = []
+    for start in range(0, len(dataset), batch_size):
+        stop = min(start + batch_size, len(dataset))
+        batch = collate_semantic_batch(
+            [dataset[index] for index in range(start, stop)], tokenizer, max_tokens=max_tokens
+        ).to(device)
+        loss = semantic_loss(model, batch)
+        if not bool(torch.isfinite(loss)):
+            raise RuntimeError("non-finite validation loss")
+        losses.append(float(loss.cpu()))
+    return sum(losses) / len(losses)
+
+
+def deterministic_batch_indices(
+    step_index: int, *, dataset_size: int, batch_size: int, seed: int
+) -> list[int]:
+    indices: list[int] = []
+    for offset in range(batch_size):
+        sample_index = step_index * batch_size + offset
+        epoch, position = divmod(sample_index, dataset_size)
+        order = list(range(dataset_size))
+        random.Random(seed + epoch).shuffle(order)
+        indices.append(order[position])
+    return indices
+
+
+def _model_config(raw_config: dict, tokenizer: HindiTokenizer) -> ModelConfig:
+    values = dict(raw_config["model"])
+    values["semantic_vocab_size"] = tokenizer.vocabulary_size
+    values.update(
+        pad_token_id=tokenizer.special_ids.pad,
+        bos_token_id=tokenizer.special_ids.bos,
+        eos_token_id=tokenizer.special_ids.eos,
+    )
+    return ModelConfig(**values)
+
+
+def _device_name(requested: str) -> str:
+    return detect_runtime().device if requested == "auto" else requested
+
+
+def _save_checkpoint(
+    path: Path,
+    *,
+    model: SpeechSemanticModel,
+    optimizer: torch.optim.Optimizer,
+    step: int,
+    best_validation_loss: float,
+    train_history: list[dict],
+    validation_history: list[dict],
+    raw_config: dict,
+    manifest_sha256: str,
+    tokenizer_sha256: str,
+) -> None:
+    payload = {
+        "step": step,
+        "best_validation_loss": best_validation_loss,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "train_history": train_history,
+        "validation_history": validation_history,
+        "raw_config": raw_config,
+        "manifest_sha256": manifest_sha256,
+        "tokenizer_sha256": tokenizer_sha256,
+    }
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, temporary)
+    temporary.replace(path)
+
+
+def _validate_resume(
+    checkpoint: dict,
+    *,
+    raw_config: dict,
+    manifest_sha256: str,
+    tokenizer_sha256: str,
+) -> None:
+    if checkpoint["raw_config"]["model"] != raw_config["model"]:
+        raise ValueError("resume checkpoint model configuration differs")
+    if checkpoint["manifest_sha256"] != manifest_sha256:
+        raise ValueError("resume checkpoint manifest differs")
+    if checkpoint["tokenizer_sha256"] != tokenizer_sha256:
+        raise ValueError("resume checkpoint tokenizer differs")
+
+
+def _synchronize(device: torch.device) -> None:
+    if device.type == "mps":
+        torch.mps.synchronize()
+    elif device.type == "cuda":
+        torch.cuda.synchronize(device)
 
 
 def _sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -125,8 +306,15 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--tokenizer", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--resume", type=Path)
     args = parser.parse_args()
-    metadata = train(args.config, args.manifest, args.tokenizer, args.output)
+    metadata = train(
+        args.config,
+        args.manifest,
+        args.tokenizer,
+        args.output,
+        resume_path=args.resume,
+    )
     print(json.dumps(metadata, indent=2, sort_keys=True))
     return 0
 

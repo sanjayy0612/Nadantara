@@ -2,5 +2,6 @@
 
 from .config import ModelConfig
 from .model import SeamTranslationModel, SeamTranslationOutput
+from .speech_semantic import SpeechSemanticModel
 
-__all__ = ["ModelConfig", "SeamTranslationModel", "SeamTranslationOutput"]
+__all__ = ["ModelConfig", "SeamTranslationModel", "SeamTranslationOutput", "SpeechSemanticModel"]

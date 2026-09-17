@@ -23,9 +23,13 @@
     "device": "auto",
     "batch_size": 1,
     "max_examples": 8,
+    "max_validation_examples": 2,
     "max_steps": 8,
     "learning_rate": 0.0003,
     "max_gradient_norm": 1.0,
+    "evaluation_interval": 4,
+    "checkpoint_interval": 4,
+    "log_interval": 1,
     "precision": "fp32"
   }
 }

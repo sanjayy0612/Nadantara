@@ -11,7 +11,7 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch.utils.data import Dataset
 
-from seamtranslation.models import SeamTranslationModel
+from seamtranslation.models import SpeechSemanticModel
 from seamtranslation.preprocessing import decode_wav
 from seamtranslation.tokenization import HindiTokenizer
 
@@ -102,8 +102,8 @@ def collate_semantic_batch(
     return SemanticBatch(waveforms, waveform_lengths, decoder_input_ids, labels)
 
 
-def semantic_loss(model: SeamTranslationModel, batch: SemanticBatch) -> Tensor:
-    logits = model.forward_semantic(
+def semantic_loss(model: SpeechSemanticModel, batch: SemanticBatch) -> Tensor:
+    logits = model(
         batch.waveforms,
         batch.waveform_lengths,
         batch.decoder_input_ids,
