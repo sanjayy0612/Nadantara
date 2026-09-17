@@ -1,0 +1,17 @@
+{
+  "actual_vocabulary_size": 8000,
+  "artifact_path": "artifacts/tokenizers/hindi_8k/hindi.model",
+  "manifest_sha256": {
+    "dataset/processed/samanantar_hi_100k/manifest.jsonl": "17b875ce5e4e3b88a85c87d48c641cb6e928b62dff38dcbed65d70033490c936",
+    "dataset/processed/wordproject_en_hi_2k/manifest.jsonl": "3b5f9ab21fe3752210548017d3f9deaeb2fbfa0c42e7fbe73cc2915946b45114"
+  },
+  "model_sha256": "4648916760ad0f9ae3480ef6ced5a3b3e0f3d84a6c917b089543cff00c418519",
+  "model_type": "unigram",
+  "sentence_count": 102000,
+  "special_ids": {
+    "bos": 1,
+    "eos": 2,
+    "pad": 0,
+    "unknown": 3
+  }
+}

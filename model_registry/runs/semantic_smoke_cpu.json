@@ -1,0 +1,16 @@
+{
+  "checkpoint_path": "train/runs/semantic-smoke/checkpoint.pt",
+  "checkpoint_sha256": "9b768d29f623aaab2a855858d8f4625fc3a8ba0af56ce37c50c9b4fe1fe473d1",
+  "device": "cpu",
+  "elapsed_seconds": 0.18592979200184345,
+  "examples": 8,
+  "final_loss": 29.97241973876953,
+  "git_commit": "993ecdb6d6cfd2309f741754aa6f7d4e01379ad9",
+  "initial_loss": 38.969993591308594,
+  "manifest_sha256": "3b5f9ab21fe3752210548017d3f9deaeb2fbfa0c42e7fbe73cc2915946b45114",
+  "parameters_total": 1037906,
+  "parameters_trained": 756592,
+  "reload_verified": true,
+  "steps": 8,
+  "tokenizer_sha256": "4648916760ad0f9ae3480ef6ced5a3b3e0f3d84a6c917b089543cff00c418519"
+}
