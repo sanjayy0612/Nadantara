@@ -1,0 +1,31 @@
+{
+  "accepted": 2000,
+  "artifact_bytes_approx": 526163968,
+  "dataset_id": "ai4bharat/WordProject",
+  "dataset_revision": "82398593980643a685816a77236adaa05591b12d",
+  "duration_seconds": 16203.039999999994,
+  "license": "CC-BY-4.0",
+  "manifest_sha256": "3b5f9ab21fe3752210548017d3f9deaeb2fbfa0c42e7fbe73cc2915946b45114",
+  "minimum_alignment_score": 0.9,
+  "minimum_translation_score": 0.8,
+  "preprocessing_commit": "a6daf2f747facd1d20859740c7f2e9c6cab29a39",
+  "rejected": {
+    "alignment_score": 12,
+    "duration": 5,
+    "translation_score": 1353
+  },
+  "sample_rate": 16000,
+  "scanned": 3370,
+  "source_shard_sha256": {
+    "train-00000-of-00002.parquet": "52faa5fbcaee27c922bbf34fd56cc9b0baa4c1b6bcd1f1489d6b61368d5f286b"
+  },
+  "split_examples": {
+    "train": 1736,
+    "validation": 264
+  },
+  "split_recordings": {
+    "train": 95,
+    "validation": 14
+  },
+  "validation_fraction": 0.1
+}
