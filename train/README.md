@@ -14,3 +14,18 @@ The training code must:
 
 `train/configs/tiny-smoke.json` is deliberately too small for useful translation. It
 exists to exercise the training graph on CPU/MPS without exhausting the 8 GB Mac.
+
+The first real stage trains English speech to Hindi semantic tokens independently of
+the unit decoder and vocoder:
+
+```bash
+PYTHONPATH=src:. .venv/bin/python train/train_semantic.py \
+  --config train/configs/semantic-smoke.json \
+  --manifest dataset/processed/wordproject_en_hi_2k/manifest.jsonl \
+  --tokenizer artifacts/tokenizers/hindi_8k/hindi.model \
+  --output train/runs/semantic-smoke
+```
+
+This configuration is a short graph and checkpoint verification run, not a quality
+training run. Increase steps and model dimensions only after it finishes with finite,
+decreasing loss and a reloadable checkpoint.

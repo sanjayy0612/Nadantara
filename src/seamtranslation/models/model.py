@@ -87,6 +87,14 @@ class SeamTranslationModel(nn.Module):
             waveform=generated_waveform,
         )
 
+    def forward_semantic(
+        self, waveform: Tensor, waveform_lengths: Tensor, semantic_input_ids: Tensor
+    ) -> Tensor:
+        """Run only the English-speech-to-Hindi-semantic training path."""
+
+        memory, memory_padding = self.encode(waveform, waveform_lengths)
+        return self.semantic_decoder(semantic_input_ids, memory, memory_padding)
+
     @torch.inference_mode()
     def generate(self, waveform: Tensor, waveform_lengths: Tensor) -> tuple[Tensor, Tensor]:
         was_training = self.training
