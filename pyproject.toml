@@ -12,9 +12,10 @@ license = { text = "Apache-2.0" }
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["numpy>=2,<3", "pyarrow>=20,<24", "pytest>=8.3,<9", "ruff>=0.9,<1", "scipy>=1.14,<2", "soundfile>=0.13,<1"]
+dev = ["numpy>=2,<3", "pyarrow>=20,<24", "pytest>=8.3,<9", "ruff>=0.9,<1", "scipy>=1.14,<2", "sentencepiece>=0.2,<1", "soundfile>=0.13,<1"]
 ml = ["numpy>=2,<3", "torch>=2.6,<3", "torchaudio>=2.6,<3"]
 data = ["numpy>=2,<3", "pyarrow>=20,<24", "scipy>=1.14,<2", "soundfile>=0.13,<1"]
+training = ["numpy>=2,<3", "pyarrow>=20,<24", "scipy>=1.14,<2", "sentencepiece>=0.2,<1", "soundfile>=0.13,<1", "torch>=2.6,<3"]
 
 [project.scripts]
 seamtranslation = "seamtranslation.cli:main"
