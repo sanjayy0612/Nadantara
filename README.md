@@ -1,6 +1,6 @@
-# SeamTranslation
+# Nadantara
 
-Compact, Seamless-inspired English → Hindi speech-to-speech translation for
+Nadantara is a compact, Seamless-inspired English → Hindi speech-to-speech translation system for
 low-power ARM devices. Apple Silicon is the development target; the model must remain
 exportable to Core ML and TensorRT.
 
