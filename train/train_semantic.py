@@ -50,9 +50,10 @@ def train(
     train_dataset = WordProjectSemanticDataset(
         manifest_path, split="train", max_examples=int(training["max_examples"])
     )
+    evaluation_split = _evaluation_split(training)
     validation_dataset = WordProjectSemanticDataset(
         manifest_path,
-        split="validation",
+        split=evaluation_split,
         max_examples=int(training["max_validation_examples"]),
     )
     model = SpeechSemanticModel(model_config).to(device)
@@ -200,6 +201,7 @@ def train(
         "steps": max_steps,
         "train_examples": len(train_dataset),
         "validation_examples": len(validation_dataset),
+        "evaluation_split": evaluation_split,
         "best_validation_loss": best_validation_loss,
         "train_history": train_history,
         "validation_history": validation_history,
@@ -305,6 +307,13 @@ def deterministic_batch_indices(
         random.Random(seed + epoch).shuffle(order)
         indices.append(order[position])
     return indices
+
+
+def _evaluation_split(training: dict) -> str:
+    split = str(training.get("evaluation_split", "validation"))
+    if split not in {"train", "validation"}:
+        raise ValueError("evaluation_split must be 'train' or 'validation'")
+    return split
 
 
 def _model_config(raw_config: dict, tokenizer: HindiTokenizer) -> ModelConfig:

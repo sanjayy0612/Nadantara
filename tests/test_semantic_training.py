@@ -7,7 +7,7 @@ from seamtranslation.evaluation import semantic_generation_metrics
 from seamtranslation.tokenization import HindiTokenizer
 from seamtranslation.training import SemanticExample, collate_semantic_batch, semantic_loss
 from train.train_tokenizer import train_tokenizer
-from train.train_semantic import deterministic_batch_indices
+from train.train_semantic import _evaluation_split, deterministic_batch_indices
 
 
 def test_semantic_loss_backpropagates(tmp_path: Path) -> None:
@@ -83,3 +83,8 @@ def test_generation_metrics_detect_repetition_and_missing_eos() -> None:
     assert metrics["bleu"] > 0
     assert metrics["eos_rate"] == 0.5
     assert metrics["repeated_token_rate"] == 2 / 6
+
+
+def test_evaluation_split_defaults_to_validation() -> None:
+    assert _evaluation_split({}) == "validation"
+    assert _evaluation_split({"evaluation_split": "train"}) == "train"
