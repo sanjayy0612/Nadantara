@@ -14,6 +14,7 @@ import time
 import torch
 
 from seamtranslation.models import ModelConfig, SpeechSemanticModel
+from seamtranslation.evaluation import semantic_generation_metrics
 from seamtranslation.runtime import detect_runtime
 from seamtranslation.tokenization import HindiTokenizer
 from seamtranslation.training import (
@@ -60,6 +61,7 @@ def train(
     best_validation_loss = float("inf")
     train_history: list[dict[str, float | int]] = []
     validation_history: list[dict[str, float | int]] = []
+    generation_history: list[dict[str, object]] = []
     if resume_path is not None:
         checkpoint = torch.load(resume_path, map_location=device, weights_only=False)
         _validate_resume(
@@ -74,6 +76,7 @@ def train(
         best_validation_loss = float(checkpoint["best_validation_loss"])
         train_history = list(checkpoint["train_history"])
         validation_history = list(checkpoint["validation_history"])
+        generation_history = list(checkpoint.get("generation_history", []))
 
     output.mkdir(parents=True, exist_ok=resume_path is not None)
     max_steps = int(training["max_steps"])
@@ -83,6 +86,12 @@ def train(
     evaluation_interval = int(training["evaluation_interval"])
     checkpoint_interval = int(training["checkpoint_interval"])
     log_interval = int(training["log_interval"])
+    generation_interval = int(training.get("generation_interval", 0))
+    max_generation_examples = int(training.get("max_generation_examples", 0))
+    if (generation_interval == 0) != (max_generation_examples == 0):
+        raise ValueError(
+            "generation_interval and max_generation_examples must both be zero or positive"
+        )
     _synchronize(device)
     started = time.perf_counter()
 
@@ -125,6 +134,24 @@ def train(
             )
             validation_history.append({"step": step, "loss": validation_loss})
             print(f"step={step} validation_loss={validation_loss:.6f}")
+            if generation_interval and (
+                step % generation_interval == 0 or step == max_steps
+            ):
+                generation = evaluate_generation(
+                    model,
+                    validation_dataset,
+                    tokenizer,
+                    device=device,
+                    batch_size=batch_size,
+                    max_examples=max_generation_examples,
+                )
+                generation_record = {"step": step, **generation}
+                generation_history.append(generation_record)
+                print(
+                    f"step={step} generation_chrf2={generation['chrf2']:.3f} "
+                    f"bleu={generation['bleu']:.3f} eos_rate={generation['eos_rate']:.3f} "
+                    f"repeated_token_rate={generation['repeated_token_rate']:.3f}"
+                )
             if validation_loss < best_validation_loss:
                 best_validation_loss = validation_loss
                 _save_checkpoint(
@@ -135,6 +162,7 @@ def train(
                     best_validation_loss=best_validation_loss,
                     train_history=train_history,
                     validation_history=validation_history,
+                    generation_history=generation_history,
                     raw_config=raw_config,
                     manifest_sha256=manifest_sha256,
                     tokenizer_sha256=tokenizer_sha256,
@@ -153,6 +181,7 @@ def train(
                     best_validation_loss=best_validation_loss,
                     train_history=train_history,
                     validation_history=validation_history,
+                    generation_history=generation_history,
                     raw_config=raw_config,
                     manifest_sha256=manifest_sha256,
                     tokenizer_sha256=tokenizer_sha256,
@@ -174,6 +203,7 @@ def train(
         "best_validation_loss": best_validation_loss,
         "train_history": train_history,
         "validation_history": validation_history,
+        "generation_history": generation_history,
         "elapsed_seconds": elapsed,
         "parameters_trained": model.parameter_count(),
     }
@@ -205,6 +235,63 @@ def evaluate(
             raise RuntimeError("non-finite validation loss")
         losses.append(float(loss.cpu()))
     return sum(losses) / len(losses)
+
+
+@torch.inference_mode()
+def evaluate_generation(
+    model: SpeechSemanticModel,
+    dataset: WordProjectSemanticDataset,
+    tokenizer: HindiTokenizer,
+    *,
+    device: torch.device,
+    batch_size: int,
+    max_examples: int,
+) -> dict[str, object]:
+    """Greedily decode a fixed validation subset and score actual translations."""
+    model.eval()
+    hypotheses: list[str] = []
+    references: list[str] = []
+    generated_ids: list[list[int]] = []
+    ended_with_eos: list[bool] = []
+    sample_outputs: list[dict[str, str]] = []
+    stop = min(len(dataset), max_examples)
+    for start in range(0, stop, batch_size):
+        examples = [dataset[index] for index in range(start, min(start + batch_size, stop))]
+        batch = collate_semantic_batch(
+            examples, tokenizer, max_tokens=model.config.max_semantic_tokens
+        ).to(device)
+        rows = model.generate(batch.waveforms, batch.waveform_lengths).cpu().tolist()
+        for example, row in zip(examples, rows, strict=True):
+            tokens, ended = _generated_content_tokens(row, tokenizer)
+            hypothesis = tokenizer.decode(tokens)
+            hypotheses.append(hypothesis)
+            references.append(example.target_text)
+            generated_ids.append(tokens)
+            ended_with_eos.append(ended)
+            if len(sample_outputs) < 3:
+                sample_outputs.append(
+                    {"reference": example.target_text, "hypothesis": hypothesis}
+                )
+
+    metrics = semantic_generation_metrics(
+        hypotheses, references, generated_ids, ended_with_eos
+    )
+    return {**metrics, "samples": sample_outputs}
+
+
+def _generated_content_tokens(
+    row: list[int], tokenizer: HindiTokenizer
+) -> tuple[list[int], bool]:
+    tokens: list[int] = []
+    ended = False
+    ignored = {tokenizer.special_ids.bos, tokenizer.special_ids.pad}
+    for token in row:
+        if token == tokenizer.special_ids.eos:
+            ended = True
+            break
+        if token not in ignored:
+            tokens.append(token)
+    return tokens, ended
 
 
 def deterministic_batch_indices(
@@ -244,6 +331,7 @@ def _save_checkpoint(
     best_validation_loss: float,
     train_history: list[dict],
     validation_history: list[dict],
+    generation_history: list[dict],
     raw_config: dict,
     manifest_sha256: str,
     tokenizer_sha256: str,
@@ -255,6 +343,7 @@ def _save_checkpoint(
         "optimizer_state_dict": optimizer.state_dict(),
         "train_history": train_history,
         "validation_history": validation_history,
+        "generation_history": generation_history,
         "raw_config": raw_config,
         "manifest_sha256": manifest_sha256,
         "tokenizer_sha256": tokenizer_sha256,

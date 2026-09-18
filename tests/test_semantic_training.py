@@ -3,6 +3,7 @@ from pathlib import Path
 import torch
 
 from seamtranslation.models import ModelConfig, SpeechSemanticModel
+from seamtranslation.evaluation import semantic_generation_metrics
 from seamtranslation.tokenization import HindiTokenizer
 from seamtranslation.training import SemanticExample, collate_semantic_batch, semantic_loss
 from train.train_tokenizer import train_tokenizer
@@ -67,3 +68,18 @@ def test_deterministic_batches_resume_at_same_sequence() -> None:
 
     assert uninterrupted[3:] == resumed
     assert uninterrupted[0] != uninterrupted[3]
+
+
+def test_generation_metrics_detect_repetition_and_missing_eos() -> None:
+    metrics = semantic_generation_metrics(
+        ["यह ठीक है", "और और और"],
+        ["यह ठीक है", "यह अलग है"],
+        [[4, 5, 6], [7, 7, 7]],
+        [True, False],
+    )
+
+    assert metrics["examples"] == 2
+    assert metrics["chrf2"] > 0
+    assert metrics["bleu"] > 0
+    assert metrics["eos_rate"] == 0.5
+    assert metrics["repeated_token_rate"] == 2 / 6
