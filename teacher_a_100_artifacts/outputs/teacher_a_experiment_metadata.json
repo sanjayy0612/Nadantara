@@ -1,0 +1,62 @@
+{
+  "artifact_paths": {
+    "teacher_a_jsonl": "/content/drive/MyDrive/Nadantara/teacher_a_100/outputs/teacher_whisper_indictrans2_100.jsonl",
+    "tokenizer_audit": "/content/drive/MyDrive/Nadantara/teacher_a_100/outputs/teacher_a_tokenizer_audit.json",
+    "whisper_transcripts": "/content/drive/MyDrive/Nadantara/teacher_a_100/outputs/teacher_a_whisper_transcripts.jsonl"
+  },
+  "benchmark_expected_examples": 100,
+  "bundle_metadata": {
+    "archive": "artifacts/teacher_benchmarks/wordproject_validation_100_seed_20260918.tar.gz",
+    "examples": 100,
+    "git_commit": "b942b4255b5bfdb63841120407f47bafb3034031",
+    "manifest_sha256": "77265d58aca85ee8a3d29635a5324baa1f7323cec187b49e56871c8d7d90f560",
+    "requested_examples": 100,
+    "sample_ids_sha256": "f0b4f025f0aa643c66b49123387b01b354c227e382a01e848fcf848d8bee2057",
+    "schema_version": 1,
+    "seed": 20260918,
+    "source_dataset": "ai4bharat/WordProject",
+    "source_manifest": "dataset/processed/wordproject_en_hi_2k/manifest.jsonl",
+    "source_manifest_sha256": "3b5f9ab21fe3752210548017d3f9deaeb2fbfa0c42e7fbe73cc2915946b45114",
+    "source_revision": "82398593980643a685816a77236adaa05591b12d",
+    "split": "validation"
+  },
+  "cuda": "12.8",
+  "device": "Tesla T4",
+  "generation_config": {
+    "indictrans2": {
+      "batch_size": 1,
+      "do_sample": false,
+      "max_length": 256,
+      "num_beams": 5,
+      "num_return_sequences": 1,
+      "src_lang": "eng_Latn",
+      "tgt_lang": "hin_Deva"
+    },
+    "whisper": {
+      "do_sample": false,
+      "language": "english",
+      "max_new_tokens": 256,
+      "num_beams": 1,
+      "task": "transcribe"
+    }
+  },
+  "model_ids": {
+    "speech_teacher": "openai/whisper-large-v3-turbo",
+    "translation_teacher": "ai4bharat/indictrans2-en-indic-1B"
+  },
+  "model_licenses": {
+    "ai4bharat/indictrans2-en-indic-1B": "MIT",
+    "openai/whisper-large-v3-turbo": "MIT"
+  },
+  "model_revisions": {
+    "ai4bharat/indictrans2-en-indic-1B": "10e65a9951a1e922cd109a95e8aba9357b62144b",
+    "openai/whisper-large-v3-turbo": "41f01f3fe87f28c78e2fbf8b568835947dd65ed9"
+  },
+  "persistent_root": "/content/drive/MyDrive/Nadantara/teacher_a_100",
+  "precision": "torch.float16",
+  "schema_version": 1,
+  "teacher_pipeline": "whisper-large-v3-turbo+indictrans2-en-indic-1B",
+  "timestamp_utc": "2026-09-18T16:41:43Z",
+  "torch": "2.11.0+cu128",
+  "transformers": "4.53.2"
+}

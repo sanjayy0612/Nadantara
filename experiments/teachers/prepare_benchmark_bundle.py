@@ -138,6 +138,7 @@ def build_bundle(
         for row in portable_rows:
             stream.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
     ids_text = "\n".join(str(row["sample_id"]) for row in portable_rows) + "\n"
+    (output / "sample_ids.txt").write_text(ids_text, encoding="utf-8")
     metadata = {
         "schema_version": SCHEMA_VERSION,
         "source_manifest": str(manifest),

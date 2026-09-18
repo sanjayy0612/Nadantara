@@ -14,21 +14,30 @@ resumable JSONL writer, and model lifecycle:
 Both consume the same portable `benchmark_manifest.jsonl` and emit the same
 canonical teacher-output fields. Human Hindi references are evaluation-only.
 
-## Local bundle preparation
+## Fixed benchmark
 
-Start with a smoke bundle of five validation examples. The source manifest is not
-modified, and the helper verifies audio paths and records SHA-256 hashes:
+The first full experiment uses one deterministic 100-example validation benchmark.
+Teacher A must finish before Teacher B is started. The source manifest is not
+modified, and the helper verifies audio paths, writes `sample_ids.txt`, and records
+SHA-256 hashes:
 
 ```bash
-PYTHONPATH=. python3 experiments/teachers/prepare_benchmark_bundle.py \
+PYTHONPATH=. .venv/bin/python experiments/teachers/prepare_benchmark_bundle.py \
   --manifest dataset/processed/wordproject_en_hi_2k/manifest.jsonl \
-  --output /tmp/nadantara-benchmark-smoke \
-  --archive /tmp/nadantara-benchmark-smoke.tar.gz \
-  --split validation --limit 5 --seed 20260918
+  --output artifacts/teacher_benchmarks/wordproject_validation_100_seed_20260918 \
+  --archive artifacts/teacher_benchmarks/wordproject_validation_100_seed_20260918.tar.gz \
+  --split validation --limit 100 --seed 20260918
 ```
 
-Use `--limit 150` only after the Phase 0 gate succeeds and you explicitly approve
-the teacher smoke tests. Keep the archive outside Git.
+Current fixed benchmark hashes:
+
+```text
+sample_ids_sha256=f0b4f025f0aa643c66b49123387b01b354c227e382a01e848fcf848d8bee2057
+manifest_sha256=77265d58aca85ee8a3d29635a5324baa1f7323cec187b49e56871c8d7d90f560
+source_manifest_sha256=3b5f9ab21fe3752210548017d3f9deaeb2fbfa0c42e7fbe73cc2915946b45114
+```
+
+Keep the benchmark archive outside Git. Do not regenerate it for Teacher B.
 
 ## Interactive Colab CLI flow
 
@@ -38,16 +47,17 @@ interactively:
 
 ```bash
 colab new -s nadantara-whisper --gpu T4
-colab upload -s nadantara-whisper /tmp/nadantara-benchmark-smoke.tar.gz /content/nadantara-benchmark-smoke.tar.gz
+colab upload -s nadantara-whisper artifacts/teacher_benchmarks/wordproject_validation_100_seed_20260918.tar.gz /content/wordproject_validation_100_seed_20260918.tar.gz
 colab upload -s nadantara-whisper experiments/teachers/whisper_indictrans2_teacher.ipynb /content/whisper_indictrans2_teacher.ipynb
 colab url -s nadantara-whisper --open
 ```
 
 Open `/content/whisper_indictrans2_teacher.ipynb` in the browser and run only its
-Phase 0 cells first. The notebook does not download a teacher until the explicit
-model cell is run. Use the analogous `nadantara-seamless` session and notebook for
-Teacher B. Do not assume the requested T4 is the assigned hardware; the notebook
-prints the actual device and free VRAM.
+Phase 0 cells first. The notebook mounts Google Drive and writes all Teacher A
+artifacts incrementally there. The notebook does not download a teacher until the
+explicit model cell is run. Do not start Teacher B until the Teacher A stop gate is
+complete and approved. Do not assume the requested T4 is the assigned hardware; the
+notebook prints the actual device and free VRAM.
 
 Teacher B's exact setup is:
 

@@ -1,0 +1,35 @@
+{
+  "asr_cer_mean": 0.04563479385323247,
+  "asr_reference_field": "source_asr_text",
+  "asr_total_seconds": 48.32615537100082,
+  "asr_wer_mean": 0.12988721017496593,
+  "bleu": 11.499568675702385,
+  "chrf2": 34.58997202053693,
+  "empty_output_count": 0,
+  "exact_match_count": 0,
+  "failed_asr_samples": 0,
+  "failed_translation_samples": 0,
+  "mean_adjacent_word_repetition_rate": 0.00045454545454545455,
+  "mean_devanagari_ratio": 0.7788519395771542,
+  "mostly_latin_count": 0,
+  "requested_samples": 100,
+  "schema_version": 1,
+  "source_copy_count": 0,
+  "successful_asr_samples": 100,
+  "successful_translation_samples": 100,
+  "target_source_word_ratio_p50_p90_p95_p99_max": [
+    0.9691650853889944,
+    1.2794117647058825,
+    1.351965601965602,
+    1.5867857142857302,
+    4.678571428571429
+  ],
+  "target_word_count_p50_p90_p95_p99_max": [
+    22.0,
+    39.20000000000002,
+    47.0,
+    60.71000000000036,
+    131
+  ],
+  "translation_total_seconds": 73.75240843000165
+}
