@@ -1,0 +1,35 @@
+{
+  "model": {
+    "feature_bins": 80,
+    "model_dim": 128,
+    "encoder_layers": 4,
+    "encoder_heads": 4,
+    "encoder_ffn_dim": 512,
+    "conformer_kernel_size": 15,
+    "semantic_layers": 3,
+    "semantic_heads": 4,
+    "semantic_ffn_dim": 512,
+    "unit_layers": 1,
+    "unit_heads": 4,
+    "unit_ffn_dim": 64,
+    "unit_dim": 32,
+    "unit_vocab_size": 64,
+    "vocoder_channels": 32,
+    "max_semantic_tokens": 96,
+    "dropout": 0.1
+  },
+  "training": {
+    "seed": 17,
+    "device": "auto",
+    "batch_size": 9,
+    "max_examples": 1736,
+    "max_validation_examples": 264,
+    "max_steps": 200,
+    "learning_rate": 0.0002,
+    "max_gradient_norm": 1.0,
+    "evaluation_interval": 25,
+    "checkpoint_interval": 50,
+    "log_interval": 10,
+    "precision": "fp32"
+  }
+}
