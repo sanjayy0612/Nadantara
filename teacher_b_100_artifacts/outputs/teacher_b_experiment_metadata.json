@@ -1,0 +1,43 @@
+{
+  "artifact_paths": {
+    "teacher_b_jsonl": "/content/drive/MyDrive/Nadantara/teacher_b_100/outputs/teacher_seamless_m4t_v2_100.jsonl",
+    "tokenizer_audit": "/content/drive/MyDrive/Nadantara/teacher_b_100/outputs/teacher_b_tokenizer_audit.json"
+  },
+  "benchmark_expected_examples": 100,
+  "bundle_metadata": {
+    "archive": "artifacts/teacher_benchmarks/wordproject_validation_100_seed_20260918.tar.gz",
+    "examples": 100,
+    "git_commit": "b942b4255b5bfdb63841120407f47bafb3034031",
+    "manifest_sha256": "77265d58aca85ee8a3d29635a5324baa1f7323cec187b49e56871c8d7d90f560",
+    "requested_examples": 100,
+    "sample_ids_sha256": "f0b4f025f0aa643c66b49123387b01b354c227e382a01e848fcf848d8bee2057",
+    "schema_version": 1,
+    "seed": 20260918,
+    "source_dataset": "ai4bharat/WordProject",
+    "source_manifest": "dataset/processed/wordproject_en_hi_2k/manifest.jsonl",
+    "source_manifest_sha256": "3b5f9ab21fe3752210548017d3f9deaeb2fbfa0c42e7fbe73cc2915946b45114",
+    "source_revision": "82398593980643a685816a77236adaa05591b12d",
+    "split": "validation"
+  },
+  "cuda": "12.8",
+  "device": "Tesla T4",
+  "generation_config": {
+    "batch_size": 1,
+    "generate_speech": false,
+    "max_new_tokens": 256,
+    "src_lang": "eng",
+    "text_do_sample": false,
+    "text_num_beams": 4,
+    "tgt_lang": "hin"
+  },
+  "model_id": "facebook/seamless-m4t-v2-large",
+  "model_license": "CC-BY-NC-4.0",
+  "model_revision": "5f8cc790b19fc3f67a61c105133b20b34e3dcb76",
+  "persistent_root": "/content/drive/MyDrive/Nadantara/teacher_b_100",
+  "precision": "torch.float16",
+  "schema_version": 1,
+  "teacher_pipeline": "facebook/seamless-m4t-v2-large",
+  "timestamp_utc": "2026-09-18T17:32:14Z",
+  "torch": "2.11.0+cu128",
+  "transformers": "5.16.1"
+}

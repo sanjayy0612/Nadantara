@@ -63,8 +63,9 @@ Teacher B's exact setup is:
 
 ```bash
 colab new -s nadantara-seamless --gpu T4
-colab upload -s nadantara-seamless /tmp/nadantara-benchmark-smoke.tar.gz /content/nadantara-benchmark-smoke.tar.gz
+colab upload -s nadantara-seamless artifacts/teacher_benchmarks/wordproject_validation_100_seed_20260918.tar.gz /content/wordproject_validation_100_seed_20260918.tar.gz
 colab upload -s nadantara-seamless experiments/teachers/seamless_m4t_teacher.ipynb /content/seamless_m4t_teacher.ipynb
+colab upload -s nadantara-seamless artifacts/tokenizers/hindi_2k/hindi.model /content/hindi_2k.model
 colab url -s nadantara-seamless --open
 ```
 
@@ -74,17 +75,17 @@ Useful lifecycle commands:
 colab status -s nadantara-whisper
 colab ls -s nadantara-whisper /content
 colab log -s nadantara-whisper -o /tmp/nadantara-whisper-history.jsonl
-colab download -s nadantara-whisper /content/teacher_a_outputs/teacher_whisper_indictrans2.jsonl /tmp/teacher_a.jsonl
+colab download -s nadantara-whisper /content/drive/MyDrive/Nadantara/teacher_a_100/teacher_a_100_artifacts.zip /tmp/teacher_a_100_artifacts.zip
 colab stop -s nadantara-whisper
 ```
 
-For Teacher B, replace the session name and remote output with:
+Teacher B downloads its complete persistent archive with:
 
 ```bash
 colab status -s nadantara-seamless
 colab ls -s nadantara-seamless /content
 colab log -s nadantara-seamless -o /tmp/nadantara-seamless-history.jsonl
-colab download -s nadantara-seamless /content/teacher_b_outputs/teacher_seamless_m4t_v2.jsonl /tmp/teacher_b.jsonl
+colab download -s nadantara-seamless /content/drive/MyDrive/Nadantara/teacher_b_100/teacher_b_100_artifacts.zip /tmp/teacher_b_100_artifacts.zip
 colab stop -s nadantara-seamless
 ```
 

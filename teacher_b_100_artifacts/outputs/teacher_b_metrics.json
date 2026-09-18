@@ -1,0 +1,30 @@
+{
+  "bleu": 14.479025820467829,
+  "chrf2": 36.80318189393125,
+  "empty_output_count": 0,
+  "exact_match_count": 0,
+  "failed_samples": 0,
+  "mean_adjacent_word_repetition_rate": 0.0009263157894736843,
+  "mean_devanagari_ratio": 0.7693859106829245,
+  "mostly_latin_count": 1,
+  "requested_samples": 100,
+  "schema_version": 1,
+  "source_copy_count": 0,
+  "successful_samples": 100,
+  "target_source_word_ratio_p50_p90_p95_p99_max": [
+    0.9676071055381401,
+    1.1558528428093646,
+    1.3104895104895102,
+    1.5335555555555558,
+    1.5555555555555556
+  ],
+  "target_word_count_p50_p90_p95_p99_max": [
+    22.0,
+    39.0,
+    41.099999999999994,
+    49.090000000000046,
+    58
+  ],
+  "translation_average_seconds": 2.1214913494999905,
+  "translation_total_seconds": 212.14913494999905
+}

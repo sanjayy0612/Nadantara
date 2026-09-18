@@ -1,0 +1,15 @@
+{
+  "archive": "artifacts/teacher_benchmarks/wordproject_validation_100_seed_20260918.tar.gz",
+  "examples": 100,
+  "git_commit": "b942b4255b5bfdb63841120407f47bafb3034031",
+  "manifest_sha256": "77265d58aca85ee8a3d29635a5324baa1f7323cec187b49e56871c8d7d90f560",
+  "requested_examples": 100,
+  "sample_ids_sha256": "f0b4f025f0aa643c66b49123387b01b354c227e382a01e848fcf848d8bee2057",
+  "schema_version": 1,
+  "seed": 20260918,
+  "source_dataset": "ai4bharat/WordProject",
+  "source_manifest": "dataset/processed/wordproject_en_hi_2k/manifest.jsonl",
+  "source_manifest_sha256": "3b5f9ab21fe3752210548017d3f9deaeb2fbfa0c42e7fbe73cc2915946b45114",
+  "source_revision": "82398593980643a685816a77236adaa05591b12d",
+  "split": "validation"
+}
