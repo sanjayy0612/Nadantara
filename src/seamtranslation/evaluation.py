@@ -15,8 +15,8 @@ def semantic_generation_metrics(
 ) -> dict[str, float | int]:
     """Return corpus translation and decoding-health metrics.
 
-    Scores use SacreBLEU's 0-100 scale. Repetition is the fraction of generated
-    token positions that repeat a token already emitted in the same sentence.
+    Scores use SacreBLEU's 0-100 scale. Adjacent repetition is the fraction of
+    token transitions where the next token is identical to the previous token.
     """
     size = len(hypotheses)
     if not size:
@@ -24,11 +24,15 @@ def semantic_generation_metrics(
     if not (len(references) == len(token_ids) == len(ended_with_eos) == size):
         raise ValueError("hypotheses, references, token IDs and EOS flags must align")
 
-    repeated = 0
-    generated = 0
+    adjacent_repetitions = 0
+    token_transitions = 0
+    generated_tokens = 0
     for sentence in token_ids:
-        generated += len(sentence)
-        repeated += len(sentence) - len(set(sentence))
+        generated_tokens += len(sentence)
+        token_transitions += max(0, len(sentence) - 1)
+        adjacent_repetitions += sum(
+            current == previous for previous, current in zip(sentence, sentence[1:])
+        )
 
     return {
         "examples": size,
@@ -42,6 +46,13 @@ def semantic_generation_metrics(
         ),
         "eos_rate": sum(ended_with_eos) / size,
         "empty_rate": sum(not text.strip() for text in hypotheses) / size,
-        "repeated_token_rate": repeated / generated if generated else 0.0,
-        "generated_tokens": generated,
+        "exact_match_rate": sum(
+            hypothesis.strip() == reference.strip()
+            for hypothesis, reference in zip(hypotheses, references, strict=True)
+        )
+        / size,
+        "adjacent_repetition_rate": (
+            adjacent_repetitions / token_transitions if token_transitions else 0.0
+        ),
+        "generated_tokens": generated_tokens,
     }

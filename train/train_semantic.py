@@ -151,7 +151,8 @@ def train(
                 print(
                     f"step={step} generation_chrf2={generation['chrf2']:.3f} "
                     f"bleu={generation['bleu']:.3f} eos_rate={generation['eos_rate']:.3f} "
-                    f"repeated_token_rate={generation['repeated_token_rate']:.3f}"
+                    f"exact_match_rate={generation['exact_match_rate']:.3f} "
+                    f"adjacent_repetition_rate={generation['adjacent_repetition_rate']:.3f}"
                 )
             if validation_loss < best_validation_loss:
                 best_validation_loss = validation_loss

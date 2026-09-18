@@ -82,7 +82,8 @@ def test_generation_metrics_detect_repetition_and_missing_eos() -> None:
     assert metrics["chrf2"] > 0
     assert metrics["bleu"] > 0
     assert metrics["eos_rate"] == 0.5
-    assert metrics["repeated_token_rate"] == 2 / 6
+    assert metrics["exact_match_rate"] == 0.5
+    assert metrics["adjacent_repetition_rate"] == 0.5
 
 
 def test_evaluation_split_defaults_to_validation() -> None:
