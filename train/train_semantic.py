@@ -31,6 +31,8 @@ def train(
     output: Path,
     *,
     resume_path: Path | None = None,
+    allow_manifest_change_on_resume: bool = False,
+    reset_best_validation: bool = False,
 ) -> dict:
     if output.exists() and resume_path is None:
         raise FileExistsError(f"output already exists: {output}")
@@ -70,11 +72,16 @@ def train(
             raw_config=raw_config,
             manifest_sha256=manifest_sha256,
             tokenizer_sha256=tokenizer_sha256,
+            allow_manifest_change=allow_manifest_change_on_resume,
         )
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_step = int(checkpoint["step"])
-        best_validation_loss = float(checkpoint["best_validation_loss"])
+        best_validation_loss = (
+            float("inf")
+            if reset_best_validation
+            else float(checkpoint["best_validation_loss"])
+        )
         train_history = list(checkpoint["train_history"])
         validation_history = list(checkpoint["validation_history"])
         generation_history = list(checkpoint.get("generation_history", []))
@@ -369,10 +376,11 @@ def _validate_resume(
     raw_config: dict,
     manifest_sha256: str,
     tokenizer_sha256: str,
+    allow_manifest_change: bool = False,
 ) -> None:
     if checkpoint["raw_config"]["model"] != raw_config["model"]:
         raise ValueError("resume checkpoint model configuration differs")
-    if checkpoint["manifest_sha256"] != manifest_sha256:
+    if not allow_manifest_change and checkpoint["manifest_sha256"] != manifest_sha256:
         raise ValueError("resume checkpoint manifest differs")
     if checkpoint["tokenizer_sha256"] != tokenizer_sha256:
         raise ValueError("resume checkpoint tokenizer differs")
@@ -394,9 +402,12 @@ def _sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
 
 
 def _git_commit() -> str:
-    return subprocess.run(
-        ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
-    ).stdout.strip()
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
 
 
 def main() -> int:
@@ -406,6 +417,8 @@ def main() -> int:
     parser.add_argument("--tokenizer", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--resume", type=Path)
+    parser.add_argument("--allow-manifest-change-on-resume", action="store_true")
+    parser.add_argument("--reset-best-validation", action="store_true")
     args = parser.parse_args()
     metadata = train(
         args.config,
@@ -413,6 +426,8 @@ def main() -> int:
         args.tokenizer,
         args.output,
         resume_path=args.resume,
+        allow_manifest_change_on_resume=args.allow_manifest_change_on_resume,
+        reset_best_validation=args.reset_best_validation,
     )
     print(json.dumps(metadata, indent=2, sort_keys=True))
     return 0
