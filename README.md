@@ -1,5 +1,7 @@
 # Nadantara
 
+![Nadantara](nandantara.png)
+
 Nadantara is a compact English-to-Hindi speech translation system designed for
 deployment on low-power ARM hardware. The target runtime is an audio-in/audio-out
 pipeline that can eventually be exported to Core ML or TensorRT.
