@@ -862,7 +862,15 @@ def write_training_manifests(
         "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in pseudo_manifest_rows),
         encoding="utf-8",
     )
-    real_path.write_text(real_manifest.read_text(encoding="utf-8"), encoding="utf-8")
+    real_rows_for_training = [
+        dict(row)
+        | {"audio_path": os.path.relpath(real_manifest.parent / row["audio_path"], real_path.parent)}
+        for row in real_rows
+    ]
+    real_path.write_text(
+        "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in real_rows_for_training),
+        encoding="utf-8",
+    )
     return pseudo_path, real_path
 
 

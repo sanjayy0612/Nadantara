@@ -8,3 +8,4 @@ __pycache__/
 artifacts/
 data/
 image.png
+.env
