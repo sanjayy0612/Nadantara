@@ -20,21 +20,42 @@ semantically disconnected from the source and heavily repetitive
 (`जो जो जो...`, `उसके उसके...`). Both students behave the same way, so the
 cause is shared infrastructure, not a per-teacher issue.
 
+## After the no-repeat-ngram fix (same checkpoints, no retraining)
+
+Root cause #1 below was implemented (`no_repeat_ngram_size=3` in
+`SemanticDecoder.generate()`) and re-evaluated on the same `best.pt`
+checkpoints, isolating the decoding fix from any training change:
+
+| | Student A — before → after | Student B — before → after |
+|---|---|---|
+| chrF2 | 8.745 → **11.449** | 9.057 → **14.924** |
+| BLEU | 0.756 → **1.365** | 0.450 → **1.135** |
+| EOS rate | 0.980 → **1.000** | 0.940 → **0.990** |
+| Exact match | 0.000 → 0.000 | 0.000 → 0.000 |
+| Adjacent repetition rate | 0.537 → **0.193** | 0.651 → **0.194** |
+
+Repetition dropped ~3x and chrF2/BLEU both improved meaningfully, confirming
+decoding was a real, measurable contributor — not just cosmetic. Still not
+usable translation: chrF2 in the low teens, zero exact matches, output still
+semantically disconnected from the source, and Student B still shows
+sub-word-level stutter (e.g. repeated single characters) that a 3-gram block
+doesn't catch. Root causes #2–6 are unaddressed and still needed for actual
+usable quality.
+
 ## Root causes, ranked by expected impact
 
-### 1. Greedy decoding with no repetition control
-`src/seamtranslation/models/semantic.py:53` `SemanticDecoder.generate()` is
+### 1. Greedy decoding with no repetition control — fixed
+`src/seamtranslation/models/semantic.py:53` `SemanticDecoder.generate()` was
 pure `argmax` per step: no repetition penalty, no no-repeat-ngram blocking,
-no beam search, no length penalty. This is the direct cause of the
+no beam search, no length penalty. This was the direct cause of the
 `जो जो जो` / `उसके उसके` loops — a known degenerate mode for undertrained
-seq2seq decoders under greedy search. This is an **inference-time** fix: it
+seq2seq decoders under greedy search. This was an **inference-time** fix: it
 doesn't touch trained weights or violate the "same architecture/config for
-both students" constraint, so it's safe to change without retraining.
+both students" constraint, so it was safe to change without retraining.
 
-**Fix:** add a no-repeat-ngram block (e.g. block repeating any 3-gram) and/or
-a repetition penalty to `SemanticDecoder.generate()`. Cheapest, highest
-expected-value fix in this list — try it first, on the existing checkpoints,
-before spending any more GPU time.
+**Status: implemented.** Added `no_repeat_ngram_size=3` blocking (see
+`_ban_repeated_ngrams` in the same file). Results above under "After the
+no-repeat-ngram fix" — real improvement, not sufficient alone.
 
 ### 2. Very little training signal
 - Pseudo-pretrain: 2000 steps × batch 9 ≈ 18k samples seen over 9979 unique
@@ -105,9 +126,9 @@ overconfident repetition in small transformer decoders.
 
 ## Suggested order of operations
 
-1. Add no-repeat-ngram blocking to `SemanticDecoder.generate()` — re-run eval
-   on the *existing* checkpoints first. Free, no retraining, tells you how
-   much of the problem is decoding vs. the model itself.
+1. ~~Add no-repeat-ngram blocking to `SemanticDecoder.generate()`~~ — done,
+   see results above. Repetition down ~3x, chrF2/BLEU up, still far from
+   usable.
 2. Add label smoothing (`label_smoothing=0.1`) — cheap, one-line change for
    the next training run.
 3. Add LR warmup + decay.
