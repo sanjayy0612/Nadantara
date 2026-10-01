@@ -51,16 +51,35 @@ class SemanticDecoder(nn.Module):
 
     @torch.inference_mode()
     def generate(self, memory: Tensor, memory_padding_mask: Tensor, *, bos_token_id: int,
-                 eos_token_id: int) -> Tensor:
+                 eos_token_id: int, no_repeat_ngram_size: int = 3) -> Tensor:
         tokens = torch.full(
             (memory.shape[0], 1), bos_token_id, dtype=torch.long, device=memory.device
         )
         finished = torch.zeros(memory.shape[0], dtype=torch.bool, device=memory.device)
         for _ in range(self.max_tokens - 1):
-            next_token = self(tokens, memory, memory_padding_mask)[:, -1].argmax(dim=-1)
+            logits = self(tokens, memory, memory_padding_mask)[:, -1]
+            if no_repeat_ngram_size > 0 and tokens.shape[1] >= no_repeat_ngram_size:
+                logits = _ban_repeated_ngrams(tokens, logits, no_repeat_ngram_size)
+            next_token = logits.argmax(dim=-1)
             next_token = torch.where(finished, eos_token_id, next_token)
             tokens = torch.cat((tokens, next_token[:, None]), dim=1)
             finished |= next_token.eq(eos_token_id)
             if bool(finished.all()):
                 break
         return tokens
+
+
+def _ban_repeated_ngrams(tokens: Tensor, logits: Tensor, ngram_size: int) -> Tensor:
+    """Set logits to -inf for tokens that would complete an already-seen n-gram."""
+    banned = logits.clone()
+    for row in range(tokens.shape[0]):
+        sequence = tokens[row].tolist()
+        prefix = tuple(sequence[-(ngram_size - 1):])
+        blocked_next_tokens = {
+            sequence[start + ngram_size - 1]
+            for start in range(len(sequence) - ngram_size + 1)
+            if tuple(sequence[start:start + ngram_size - 1]) == prefix
+        }
+        for token_id in blocked_next_tokens:
+            banned[row, token_id] = float("-inf")
+    return banned
