@@ -6,6 +6,7 @@ import argparse
 from dataclasses import asdict
 from hashlib import sha256
 import json
+import math
 from pathlib import Path
 import random
 import subprocess
@@ -105,6 +106,10 @@ def train(
 
     for step_index in range(start_step, max_steps):
         step = step_index + 1
+        if "lr_schedule" in training:
+            learning_rate = scheduled_learning_rate(step, training)
+            for group in optimizer.param_groups:
+                group["lr"] = learning_rate
         model.train()
         indices = deterministic_batch_indices(
             step_index, dataset_size=len(train_dataset), batch_size=batch_size, seed=seed
@@ -125,7 +130,8 @@ def train(
         optimizer.step()
         loss_value = float(loss.detach().cpu())
         train_history.append(
-            {"step": step, "loss": loss_value, "gradient_norm": float(gradient_norm)}
+            {"step": step, "loss": loss_value, "gradient_norm": float(gradient_norm),
+             "learning_rate": float(optimizer.param_groups[0]["lr"])}
         )
         if step == 1 or step % log_interval == 0:
             print(f"step={step} train_loss={loss_value:.6f}")
@@ -315,6 +321,23 @@ def deterministic_batch_indices(
         random.Random(seed + epoch).shuffle(order)
         indices.append(order[position])
     return indices
+
+
+def scheduled_learning_rate(step: int, training: dict) -> float:
+    """Optional warmup/cosine schedule with explicit origin for continuation runs."""
+    schedule = training["lr_schedule"]
+    origin = int(schedule.get("start_step", 0))
+    warmup = int(schedule.get("warmup_steps", 0))
+    duration = int(training["max_steps"]) - origin
+    minimum_ratio = float(schedule.get("minimum_ratio", 0.1))
+    if duration <= 0 or not 0 <= warmup < duration or not 0 <= minimum_ratio <= 1:
+        raise ValueError("invalid learning-rate schedule")
+    elapsed = max(0, step - origin)
+    peak = float(training["learning_rate"])
+    if warmup and elapsed <= warmup:
+        return peak * elapsed / warmup
+    progress = min(1.0, max(0.0, (elapsed - warmup) / (duration - warmup)))
+    return peak * (minimum_ratio + (1 - minimum_ratio) * (1 + math.cos(math.pi * progress)) / 2)
 
 
 def _evaluation_split(training: dict) -> str:

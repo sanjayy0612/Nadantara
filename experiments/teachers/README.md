@@ -1,5 +1,18 @@
 # Teacher experiments
 
+For data review and verified-transcript versus ASR translation diagnostics, run
+`PYTHONPATH=src:. python experiments/teachers/audit_translation_data.py --help`.
+The `prepare` command writes an audio bundle, automated checks, and a human review
+CSV. After review, `translate` uses an existing local IndicTrans2 model for both
+conditions; `compare` scores the exact paired set. Review is required and no model
+is downloaded automatically. Write generated artifacts under ignored `artifacts/`.
+Review every row: set `audio_verified` and `target_alignment` to `yes` or `no`,
+enter the actual `reviewer`, and supply `verified_source_text` for accepted rows.
+For paired validation, pass the existing canonical Teacher A JSONL via
+`prepare --asr-outputs`; selection is restricted to successful ASR sample IDs.
+Use the teacher notebook's compatible inference environment for `translate`, and
+provide the exact 40-character local model source revision with `--revision`.
+
 Teacher generation is isolated from the deployable Nadantara student. Large
 checkpoints, caches, generated labels, and audio artifacts stay outside Git.
 

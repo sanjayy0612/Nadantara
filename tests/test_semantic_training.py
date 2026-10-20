@@ -8,6 +8,26 @@ from seamtranslation.tokenization import HindiTokenizer
 from seamtranslation.training import SemanticExample, collate_semantic_batch, semantic_loss
 from train.train_tokenizer import train_tokenizer
 from train.train_semantic import _evaluation_split, deterministic_batch_indices
+from train.check_audio_dependence import audio_permutation
+from train.train_semantic import scheduled_learning_rate
+
+
+def test_audio_permutation_has_no_matched_audio_and_is_reproducible() -> None:
+    for size in (2, 3, 32):
+        permutation = audio_permutation(size, 17)
+        assert sorted(permutation) == list(range(size))
+        assert all(index != other for index, other in enumerate(permutation))
+        assert permutation == audio_permutation(size, 17)
+
+
+def test_continuation_learning_rate_schedule() -> None:
+    training = {"learning_rate": 0.0002, "max_steps": 3900,
+                "lr_schedule": {"start_step": 2900, "warmup_steps": 50,
+                                "minimum_ratio": 0.1}}
+    assert abs(scheduled_learning_rate(2925, training) - 0.0001) < 1e-12
+    assert abs(scheduled_learning_rate(2950, training) - 0.0002) < 1e-12
+    assert scheduled_learning_rate(3400, training) < 0.0002
+    assert abs(scheduled_learning_rate(3900, training) - 0.00002) < 1e-12
 
 
 def test_semantic_loss_backpropagates(tmp_path: Path) -> None:

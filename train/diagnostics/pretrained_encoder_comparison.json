@@ -1,0 +1,50 @@
+{
+  "random": {
+    "metrics": {
+      "examples": 264,
+      "chrf2": 13.929419700567717,
+      "bleu": 0.9151576237316744,
+      "eos_rate": 0.9962121212121212,
+      "empty_rate": 0.0,
+      "exact_match_rate": 0.0,
+      "adjacent_repetition_rate": 0.2068748690002096,
+      "generated_tokens": 14577
+    },
+    "correct_minus_shuffled_chrf2": 0.8108515119332171
+  },
+  "pretrained": {
+    "metrics": {
+      "examples": 264,
+      "chrf2": 13.78410522918304,
+      "bleu": 0.9564913146771736,
+      "eos_rate": 0.9962121212121212,
+      "empty_rate": 0.0,
+      "exact_match_rate": 0.0,
+      "adjacent_repetition_rate": 0.18280071534095327,
+      "generated_tokens": 13125
+    },
+    "correct_minus_shuffled_chrf2": 1.3860908466070825
+  },
+  "pretrained_minus_random_chrf2": -0.14531447138467612,
+  "baseline": {
+    "examples": 264,
+    "chrf2": 14.201224062071137,
+    "bleu": 1.1414056435738886,
+    "eos_rate": 0.9962121212121212,
+    "empty_rate": 0.0,
+    "exact_match_rate": 0.0,
+    "adjacent_repetition_rate": 0.15442672998643148,
+    "generated_tokens": 12056
+  },
+  "configuration": {
+    "steps_per_condition": 1000,
+    "seed": 17,
+    "train_examples": 1736,
+    "validation_examples": 264,
+    "trainable_parameters": 1115904,
+    "frozen_encoder_parameters": 8208384,
+    "encoder_revision": "169d4a4341b33bc18d8881c4b69c2e104e1cc0af",
+    "decoder_initialization": "Same step-2900 baseline in both conditions",
+    "encoder_frozen": true
+  }
+}
