@@ -13,3 +13,4 @@ train/runs/
 /recent.md
 train/diagnostics/*audio_dependence.json
 train/diagnostics/memorization_record.json
+docs/images/prompts.md

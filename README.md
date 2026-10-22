@@ -2,9 +2,19 @@
 
 ![Nadantara](nandantara.png)
 
-Nadantara is a compact English-to-Hindi speech translation system designed for
-deployment on low-power ARM hardware. The target runtime is an audio-in/audio-out
-pipeline that can eventually be exported to Core ML or TensorRT.
+**Experimental English-to-Hindi speech translation through knowledge distillation.**
+
+Nadantara investigates whether a compact speech translation student can learn from
+two teacher pipelines: **Whisper Large-v3 Turbo → IndicTrans2** and
+**SeamlessM4T-v2 Large**. Each teacher supervises a separate student, allowing a
+controlled comparison of teacher-generated Hindi targets.
+
+**Status: experimental and incomplete.** Current student outputs still contain
+repetition and fail to reliably preserve source meaning. This repository contains
+model code, training scripts, evaluation tools, and experiment records; it does
+not provide a ready-to-use translator.
+
+The implemented student training path is:
 
 ```text
 English waveform
@@ -13,13 +23,18 @@ log-Mel frontend → compact Conformer speech encoder
       ↓
 autoregressive Hindi semantic decoder
       ↓
-Hindi speech units → vocoder → Hindi waveform
+Hindi text
 ```
 
-The repository is currently focused on the semantic translation stage and its
-supervision experiments. A successful teacher experiment is not yet a production
-speech-to-speech model: the Hindi unit decoder and vocoder still require their own
-validated data, training, and end-to-end evaluation.
+![Student architecture: English audio features enter a Conformer-style encoder; the Hindi decoder uses masked self-attention and cross-attention to predict tokens.](docs/images/student-architecture.png)
+
+*Student architecture. Audio representations supply context to cross-attention;
+previous Hindi tokens enter masked self-attention. Token symbols are schematic.*
+
+Offline speech-to-speech translation on constrained hardware remains the longer-term
+target. Hindi speech-unit generation and vocoding still require validated data,
+training, and end-to-end evaluation. Core ML/TensorRT export, memory budgets, and
+runtime performance are goals rather than demonstrated deployment capabilities.
 
 ## Project status
 
@@ -32,10 +47,20 @@ The repository contains:
 - reproducible training/evaluation entry points and checkpoint metadata;
 - teacher benchmarking and resumable sequence-level distillation scripts.
 
-The current real-data semantic baseline was trained from scratch on 1,736 English
-speech/Hindi-text training pairs with 264 validation examples. The recorded baseline
-is approximately BLEU 0.56, chrF2 13.31, repetition 24%, and 100% EOS rate. These
-values are development measurements, not a claim of production quality.
+The real-data semantic baseline was trained from scratch on 1,736 English
+speech/Hindi-text training pairs with 264 validation examples. Distillation adds
+teacher-generated labels from a separate shared audio selection, followed by
+fine-tuning on the human-reference training set.
+
+## Recorded experiments
+
+Scores below are recorded development measurements. BLEU and chrF2 use a 0–100
+scale; higher is better. The 100-example and 264-example evaluations are different
+sets and should not be compared as a single model ranking. Data is drawn from
+WordProject's Bible-text domain; these results do not establish general speech
+translation quality.
+
+### Teacher benchmark — 100 examples
 
 The fixed 100-example teacher benchmark currently records:
 
@@ -44,14 +69,55 @@ The fixed 100-example teacher benchmark currently records:
 | A | Whisper Large-v3 Turbo → IndicTrans2 | 11.50 | 34.59 |
 | B | SeamlessM4T-v2 Large | 14.48 | 36.80 |
 
-Teacher A also recorded approximately 12.99% WER and 4.56% CER on available English
-references. Teacher A and Teacher B use the same held-out benchmark; those examples
-must not enter pseudo-training.
+The teachers use the same fixed benchmark, whose IDs are excluded from
+pseudo-training. Machine-readable records: [Teacher A metrics](teacher_a_100_artifacts/outputs/teacher_a_metrics.json)
+and [Teacher B metrics](teacher_b_100_artifacts/outputs/teacher_b_metrics.json).
 
-The teacher scores are evidence that the supervision is stronger than the current
-student baseline. They do not predict the final student score: the compact student,
-2K tokenizer, optimization schedule, and audio-domain mismatch remain experimental
-variables.
+### Distilled students — 100 examples
+
+The quality audit records the following before and after adding repeated-trigram
+blocking to decoding. The checkpoints were unchanged; no retraining was involved.
+
+| Student | Teacher supervision | BLEU before → after | chrF2 before → after |
+| --- | --- | ---: | ---: |
+| A | Whisper → IndicTrans2 | 0.756 → 1.365 | 8.745 → 11.449 |
+| B | SeamlessM4T-v2 | 0.450 → 1.135 | 9.057 → 14.924 |
+
+Repetition decreased, but outputs still failed to reliably preserve meaning.
+See the [translation quality audit](docs/translation-quality-audit.md) for the
+recorded results and proposed follow-up experiments. Suspected contributors in
+that audit are hypotheses unless supported by an executed comparison.
+
+### Additional baseline experiments — 264 validation examples
+
+These experiments used the real-data baseline, not the distilled Student A/B
+checkpoints.
+
+| Experiment | BLEU | chrF2 |
+| --- | ---: | ---: |
+| Original 2.69M baseline, step 2900 | 1.141 | 14.201 |
+| 1,000-step continuation, best validation-loss checkpoint | 1.138 | 13.907 |
+| 1,000-step continuation, final checkpoint | 1.197 | 13.781 |
+| Frozen random Whisper encoder + trained adapter/decoder | 0.915 | 13.929 |
+| Frozen pretrained Whisper encoder + trained adapter/decoder | 0.956 | 13.784 |
+
+The continuation reduced validation loss without a useful translation-quality
+gain. The frozen pretrained encoder did not improve chrF2 over its matched random
+control under the tested 1,000-step budget. The frozen-encoder models contain
+9.32M total parameters, including 8.21M frozen parameters; they are separate
+architectures from the 2.69M baseline.
+
+Records: [continuation report](train/diagnostics/local_continuation_summary.md),
+[frozen-encoder report](train/diagnostics/pretrained_encoder_summary.md), and
+[comparison metrics](train/diagnostics/pretrained_encoder_comparison.json).
+These bounded experiments do not establish model capacity as the bottleneck or
+rule out other pretrained or fine-tuning approaches.
+
+Current follow-up work focuses on source/target alignment review and comparing
+teacher translation from verified English transcripts with translation from ASR
+transcripts. The [data audit script](experiments/teachers/audit_translation_data.py)
+prepares review bundles and paired evaluation. Human review and the paired
+IndicTrans2 diagnostic remain pending; no new quality result is claimed for them.
 
 ## Quick start
 
@@ -60,7 +126,7 @@ Create a development environment and run the repository tests:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[dev]'
+python -m pip install -e '.[dev,training]'
 pytest
 ```
 
@@ -71,7 +137,11 @@ seamtranslation inspect
 seamtranslation passthrough input.wav output.wav
 ```
 
-The package has no model weights in Git. Training and teacher scripts download model
+The passthrough command validates audio transport; it does not translate speech.
+The package has no student checkpoints or runnable translator weights in Git.
+Training also requires the dataset audio and a matching tokenizer artifact; see
+[training setup](train/README.md) and [distillation setup](experiments/distillation/README.md).
+Teacher scripts download model
 weights into the local Hugging Face cache or the temporary Colab runtime; experiment
 artifacts are persisted separately.
 
@@ -82,7 +152,8 @@ src/seamtranslation/       reusable runtime, preprocessing, models, and contract
 train/                      semantic trainer and versioned model configurations
 experiments/distillation/   teacher and student experiment scripts
 dataset/                    small checked-in manifests and provenance metadata
-artifacts/tokenizers/       current Hindi-2K tokenizer
+model_registry/             model/tokenizer metadata
+artifacts/                  ignored local tokenizers and generated artifacts
 docs/                       product, architecture, data, and evaluation decisions
 tests/                      deterministic unit and smoke tests
 ```
@@ -95,9 +166,19 @@ Important project decisions are documented in:
 - [Evaluation contract](docs/evaluation.md)
 - [Dataset audit](docs/dataset-audit.md)
 - [Distillation workflow](experiments/distillation/README.md)
-- [Contributor and agent instructions](AGENTS.md)
 
 ## Distillation experiment
+
+![Two-teacher distillation: Whisper and IndicTrans2 supervise Student A; SeamlessM4T-v2 supervises Student B on the same usable audio IDs, followed by human-reference fine-tuning.](docs/images/two-teacher-distillation.png)
+
+*Distillation workflow. The diagram shows the default selection and update budget.
+The final usable sample count depends on filtering; teacher labels stay separate.*
+
+The method is **offline sequence-level distillation**: each teacher generates Hindi
+sentences, which are saved as pseudo-labels. Students train on the original English
+audio and those Hindi targets using token cross-entropy. Teacher weights, hidden
+features, and token-probability distributions are not transferred to the students.
+The two teachers are experimental alternatives, not an ensemble used at inference.
 
 The first distillation experiment compares two separate fresh students against the
 real-data baseline:
@@ -118,13 +199,19 @@ Both students use the same:
 
 The only intended experimental difference is teacher supervision. WordProject Hindi
 text is retained for diagnostics, but it is not used as the pseudo-training target.
-Teacher A and Teacher B labels are stored separately and are joined only by
-`sample_id` after both label sets have passed quality filtering.
+Teacher A and Teacher B labels remain separate. After filtering, both students
+train on the same intersection of usable audio IDs, retaining their own teacher's
+Hindi target for each example. Automated filters do not establish semantic accuracy.
 
 The scripts run in two stages:
 
-1. pseudo-label pretraining on teacher-generated Hindi text;
-2. real-data fine-tuning on the existing 1,736-example Nadantara training set.
+1. Pseudo-label training from a fresh student on teacher-generated Hindi text
+   (default: 2,000 optimizer updates).
+2. Continue the same student on the existing 1,736-example human-reference training
+   set (default: 1,000 further updates).
+
+Only the student is needed for its intended inference path. A completed training
+run is not evidence of a ready model; translation quality must be evaluated.
 
 They save incrementally and resume by `sample_id`, so a runtime interruption does not
 require regenerating completed labels.
@@ -248,13 +335,20 @@ quality evaluation.
 
 ## License and provenance
 
-The repository is Apache-2.0. Dataset and teacher licenses are separate from the
+Original repository code is licensed under [Apache-2.0](LICENSE). See
+[third-party attribution](THIRD_PARTY.md) for the benchmark data, teacher sources,
+and explanatory images. Dataset and teacher licenses are separate from the
 repository license and must remain in experiment metadata:
 
 - WordProject: CC BY 4.0;
 - Whisper: MIT;
 - IndicTrans2: MIT;
 - SeamlessM4T-v2: CC BY-NC 4.0.
+
+The two existing benchmark archives under `teacher_a_100_artifacts/` and
+`teacher_b_100_artifacts/` contain the same 100-example WordProject audio subset.
+Their data attribution and preprocessing changes are documented in
+[THIRD_PARTY.md](THIRD_PARTY.md); the code license does not replace the data license.
 
 The SeamlessM4T teacher and any derived checkpoint require a separate downstream
 license review. This README does not make a redistribution or commercial-use claim
